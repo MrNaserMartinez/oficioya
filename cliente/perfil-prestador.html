@@ -12,35 +12,12 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Perfil del prestador</h1>
+    <nav aria-label="Ruta de navegación" class="mt-3 small">
+      <a href="busqueda.html"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a la búsqueda</a>
+    </nav>
+    <h1 class="titulo-pagina h3 mt-2">Perfil del prestador</h1>
     <div id="mensaje"></div>
-
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 3
-         Requisito(s): RF02, RF05
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 3</strong> · RF02, RF05</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?id=PR01 de la URL</li>
-        <li>Mostrar nombre, oficios, especialidades, experiencia, zonas, días y horario, costo de visita</li>
-        <li>Sello de verificación mostrando QUÉ se revisó (prestador.verificacion.revisado), o "Pendiente de verificación"</li>
-        <li>Calificaciones y comentarios (OY.listar("calificaciones", c => c.prestadorId === id))</li>
-        <li>Botón "Solicitar servicio" → solicitud.html?prestador=PR01&amp;oficio=OF02 (si no hay sesión, mandar al login)</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.obtener("prestadores", id)</code></li>
-        <li><code>OY.nombrePrestador(id)</code></li>
-        <li><code>OY.calificacionPromedio(id)</code></li>
-        <li><code>OY.nombreZona / OY.nombreOficio / OY.nombreEspecialidad</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">PR01 (verificado, con calificación), PR03 (pendiente, sin calificaciones).</p>
-    </section>
+    <div id="contenido"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -48,8 +25,164 @@
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
-    const u = UI.iniciarPagina();
-    // Tu código aquí.
+    const u = UI.iniciarPagina();   // pública: se puede ver sin iniciar sesión
+    const contenido = document.getElementById("contenido");
+
+    function pintarNoEncontrado() {
+      contenido.innerHTML = `
+        <section class="tarjeta estado-vacio">
+          <i class="bi bi-person-x" aria-hidden="true"></i>
+          <h2 class="h5">No encontramos a este prestador</h2>
+          <p>El perfil no existe o ya no está disponible.</p>
+          <a class="btn btn-primary" href="busqueda.html">Buscar prestadores</a>
+        </section>`;
+    }
+
+    /* Sello de verificación: indica QUÉ se revisó (no es garantía de calidad). */
+    function selloVerificacion(v) {
+      if (v.estado === "Verificado") {
+        const items = v.revisado.map(r => `<li>${UI.escapar(r)}</li>`).join("");
+        return `
+          <div class="alert alert-success mb-0" role="note">
+            <p class="mb-1 fw-bold"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verificado el ${UI.escapar(OY.formatoFecha(v.fecha, false))}</p>
+            <p class="small mb-1">Administración revisó:</p>
+            <ul class="small mb-1">${items}</ul>
+            <p class="small mb-0">La verificación indica qué se comprobó; no garantiza la calidad del trabajo ni la conducta de la persona.</p>
+          </div>`;
+      }
+      return `
+        <div class="alert alert-secondary mb-0" role="note">
+          <p class="mb-1 fw-bold"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pendiente de verificación</p>
+          <p class="small mb-0">Administración aún no revisa la identidad ni el teléfono de este prestador. Puedes solicitarle un servicio, pero ten en cuenta que sus datos no han sido comprobados.</p>
+        </div>`;
+    }
+
+    function pintarCalificaciones(prestadorId) {
+      const lista = OY.listar("calificaciones", c => c.prestadorId === prestadorId)
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+      if (lista.length === 0) {
+        return `<div class="estado-vacio py-4"><i class="bi bi-chat-square-text" aria-hidden="true"></i>
+                <p class="mb-0">Todavía no tiene calificaciones. Solo los clientes con un servicio finalizado pueden calificar.</p></div>`;
+      }
+      return lista.map(c => `
+        <article class="border-bottom py-3">
+          <div class="d-flex justify-content-between flex-wrap gap-1">
+            <span>${UI.estrellas(c.puntuacion)} <span class="visually-hidden">${c.puntuacion} de 5</span></span>
+            <span class="small texto-suave">${UI.escapar(OY.formatoFecha(c.fecha, false))}</span>
+          </div>
+          <p class="mb-0 mt-1">${c.comentario ? UI.escapar(c.comentario) : '<span class="texto-suave">Sin comentario.</span>'}</p>
+          <p class="small texto-suave mb-0">${UI.escapar(OY.nombreCompleto(c.clienteId).split(" ")[0])} · cliente</p>
+        </article>`).join("");
+    }
+
+    /* Botón "Solicitar servicio" según sesión y rol */
+    function pintarAccion(p, oficioId) {
+      const zonaParam = new URLSearchParams(location.search).get("zona");
+      const destino = `solicitud.html?prestador=${encodeURIComponent(p.id)}&oficio=${encodeURIComponent(oficioId)}${zonaParam ? "&zona=" + encodeURIComponent(zonaParam) : ""}`;
+      const ofi = OY.obtener("oficios", oficioId);
+      const inmediata = ofi && ofi.modalidad === "Inmediata" && p.disponibleAhora;
+      if (!u || !u.rol) {
+        return `<a class="btn btn-acento w-100" href="../acceso/login.html"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Inicia sesión para solicitar</a>
+                <p class="small texto-suave mt-2 mb-0">Necesitas una cuenta de cliente para pedir un servicio.</p>`;
+      }
+      if (u.rol !== "cliente") {
+        return `<button class="btn btn-acento w-100" disabled><i class="bi bi-lock" aria-hidden="true"></i> Solicitar servicio</button>
+                <p class="small texto-suave mt-2 mb-0">Estás en el rol ${UI.escapar(UI.ETIQUETA_ROL[u.rol])}. Solo el rol Cliente puede solicitar servicios.</p>`;
+      }
+      if (u.prestador && u.prestador.id === p.id) {
+        return `<button class="btn btn-acento w-100" disabled><i class="bi bi-lock" aria-hidden="true"></i> Solicitar servicio</button>
+                <p class="small texto-suave mt-2 mb-0">Este es tu propio perfil; no puedes contratarte a ti mismo.</p>`;
+      }
+      return `<a class="btn btn-acento w-100" href="${destino}${inmediata ? "&inmediata=1" : ""}">
+                <i class="bi bi-send" aria-hidden="true"></i> ${inmediata ? "Pedir ahora" : "Solicitar servicio"}</a>`;
+    }
+
+    function pintarPerfil() {
+      const id = new URLSearchParams(location.search).get("id");
+      const cuentaP = id ? OY.obtener("prestadores", id) : null;
+      if (!cuentaP) { pintarNoEncontrado(); return; }
+
+      /* Reusamos buscarPrestadores para respetar las reglas de visibilidad
+         (cuenta suspendida o prestador Rechazado no se muestran). */
+      const p = OY.buscarPrestadores({}).find(x => x.id === id);
+      if (!p) { pintarNoEncontrado(); return; }
+
+      const oficioId = new URLSearchParams(location.search).get("oficio") || p.oficios[0];
+      const oficiosHtml = p.oficios.map(o => `<span class="badge text-bg-primary">${UI.escapar(OY.nombreOficio(o))}</span>`).join(" ");
+      const espHtml = p.especialidades.length
+        ? p.especialidades.map(e => `<span class="badge text-bg-light border">${UI.escapar(OY.nombreEspecialidad(e))}</span>`).join(" ")
+        : '<span class="texto-suave">No indicó especialidades.</span>';
+      const zonasHtml = p.zonas.map(z => `<span class="badge text-bg-light border"><i class="bi bi-geo-alt" aria-hidden="true"></i> ${UI.escapar(OY.nombreZona(z))}</span>`).join(" ");
+      const d = p.disponibilidad;
+      const ofi = OY.obtener("oficios", oficioId);
+      const esDiagnostico = ofi && ofi.modalidad === "Diagnóstico";
+      const cal = p.calificacion;
+      const disponibleHtml = p.disponibleAhora
+        ? '<span class="badge text-bg-success"><i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Disponible ahora</span>'
+        : (d.atiendeInmediato ? '<span class="badge text-bg-secondary"><i class="bi bi-moon" aria-hidden="true"></i> Fuera de horario ahora</span>' : "");
+
+      let condiciones = "";
+      if (esDiagnostico) {
+        condiciones = `<li><i class="bi bi-cash-coin" aria-hidden="true"></i> <strong>Costo de visita (diagnóstico):</strong> ${OY.formatoQ(p.costoVisita)}.
+          Después de la visita enviará una cotización que tú apruebas antes de empezar el trabajo.</li>`;
+      } else if (ofi && ofi.modalidad === "Por presupuesto") {
+        condiciones = `<li><i class="bi bi-file-earmark-text" aria-hidden="true"></i> <strong>Trabaja por presupuesto:</strong> enviará una cotización con mano de obra, materiales y cargos separados; tú la apruebas antes de empezar.</li>`;
+      } else {
+        condiciones = `<li><i class="bi bi-lightning" aria-hidden="true"></i> <strong>Atención inmediata:</strong> ${d.atiendeInmediato ? "atiende solicitudes de urgencia en su horario." : "no atiende solicitudes inmediatas."}</li>`;
+      }
+
+      contenido.innerHTML = `
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <section class="tarjeta mb-3">
+              <div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+                <div>
+                  <h2 class="h4 fw-bold mb-1">${UI.escapar(p.nombre)}</h2>
+                  <p class="mb-2">${oficiosHtml} ${disponibleHtml}</p>
+                </div>
+                <div class="text-end">
+                  ${cal.total > 0
+                    ? `${UI.estrellas(cal.promedio)} <strong>${cal.promedio.toFixed(1)}</strong>
+                       <div class="small texto-suave">${cal.total} calificación${cal.total === 1 ? "" : "es"}</div>`
+                    : '<span class="small texto-suave">Sin calificaciones aún</span>'}
+                </div>
+              </div>
+              <p class="mb-3">${p.descripcion ? UI.escapar(p.descripcion) : '<span class="texto-suave">Sin descripción.</span>'}</p>
+              ${selloVerificacion(p.verificacion)}
+            </section>
+
+            <section class="tarjeta mb-3">
+              <h2 class="h6 fw-bold">Experiencia y especialidades</h2>
+              <p class="mb-2"><i class="bi bi-award" aria-hidden="true"></i> ${p.experienciaAnios} año${p.experienciaAnios === 1 ? "" : "s"} de experiencia</p>
+              <p class="mb-0">${espHtml}</p>
+            </section>
+
+            <section class="tarjeta mb-3">
+              <h2 class="h6 fw-bold">Cobertura y disponibilidad</h2>
+              <p class="mb-2"><span class="texto-suave">Zonas que atiende:</span> ${zonasHtml}</p>
+              <p class="mb-1"><i class="bi bi-calendar-week" aria-hidden="true"></i> ${d.dias.map(x => UI.escapar(x)).join(", ")}</p>
+              <p class="mb-0"><i class="bi bi-clock" aria-hidden="true"></i> De ${UI.escapar(d.horaInicio)} a ${UI.escapar(d.horaFin)}</p>
+            </section>
+
+            <section class="tarjeta">
+              <h2 class="h6 fw-bold">Calificaciones y comentarios</h2>
+              ${pintarCalificaciones(p.id)}
+            </section>
+          </div>
+
+          <aside class="col-lg-4">
+            <section class="tarjeta">
+              <h2 class="h6 fw-bold">Condiciones del servicio</h2>
+              <ul class="list-unstyled small">${condiciones}
+                <li class="mt-2"><i class="bi bi-shield-lock" aria-hidden="true"></i> Su teléfono y tu dirección exacta se comparten solo después de confirmar el servicio.</li>
+              </ul>
+              ${pintarAccion(p, oficioId)}
+            </section>
+          </aside>
+        </div>`;
+    }
+
+    pintarPerfil();
   </script>
 </body>
 </html>

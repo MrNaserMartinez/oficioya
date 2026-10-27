@@ -14,34 +14,7 @@
   <main class="container pb-5">
     <h1 class="titulo-pagina h3">Crear solicitud</h1>
     <div id="mensaje"></div>
-
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 3
-         Requisito(s): RF06
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 3</strong> · RF06</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?prestador= y ?oficio= (y ?inmediata=1)</li>
-        <li>Campos: especialidad, descripción (mín. 10 caracteres), zona, referencia de dirección, tipo de horario (Inmediata/Programada) con fecha y franja, fotos opcionales (solo nombres, SIMULADO)</li>
-        <li>Mostrar costo de visita si el oficio es de diagnóstico</li>
-        <li>Generar la clave al ABRIR la página: const clave = OY.nuevaClaveEnvio(); y enviarla en crearSolicitud → evita duplicados al reintentar</li>
-        <li>Bloquear el botón al enviar (UI.bloquearBoton) y mostrar errores de datos incompletos con UI.alerta</li>
-        <li>Al terminar → seguimiento.html?solicitud=SOL-000X</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.crearSolicitud(datos, clave)</code></li>
-        <li><code>OY.nuevaClaveEnvio()</code></li>
-        <li><code>UI.bloquearBoton / UI.liberarBoton</code></li>
-        <li><code>UI.alerta("mensaje", "danger", r.error)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Entrar como cliente@demo.com y pedir al electricista PR01 en Sector Centro.</p>
-    </section>
+    <div id="contenido"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -50,7 +23,230 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina({ roles: ["cliente"] });
-    // Tu código aquí.
+
+    if (u) {
+      const params = new URLSearchParams(location.search);
+      const prestadorId = params.get("prestador");
+      const oficioId = params.get("oficio");
+      const pedidoInmediato = params.get("inmediata") === "1";
+      const zonaParam = params.get("zona");   // sector que manda la búsqueda (opcional)
+      const contenido = document.getElementById("contenido");
+
+      /* La clave se genera UNA vez, al abrir la página: si el usuario
+         reintenta (doble clic, mala conexión), no se duplica la solicitud. */
+      const claveEnvio = OY.nuevaClaveEnvio();
+
+      const pr = prestadorId ? OY.buscarPrestadores({}).find(x => x.id === prestadorId) : null;
+      const oficio = oficioId ? OY.obtener("oficios", oficioId) : null;
+
+      if (!pr || !oficio || !pr.oficios.includes(oficioId)) {
+        contenido.innerHTML = `
+          <section class="tarjeta estado-vacio">
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            <h2 class="h5">Primero elige un prestador</h2>
+            <p>Para crear una solicitud necesitas partir del perfil de un prestador.</p>
+            <a class="btn btn-primary" href="busqueda.html">Buscar prestadores</a>
+          </section>`;
+      } else {
+        const esDiagnostico = oficio.modalidad === "Diagnóstico";
+        const permiteInmediata = oficio.modalidad === "Inmediata" && pr.disponibilidad.atiendeInmediato;
+        const inmediataInicial = permiteInmediata && (pedidoInmediato || pr.disponibleAhora);
+        const especialidades = OY.listar("especialidades", e => e.oficioId === oficioId && e.activo && pr.especialidades.includes(e.id));
+        const zonasPrestador = pr.zonas.map(z => OY.obtener("zonas", z));
+        const hoy = OY.ahoraISO().substring(0, 10);
+
+        contenido.innerHTML = `
+          <div class="row g-3">
+            <div class="col-lg-8">
+              <form id="formSolicitud" class="tarjeta" novalidate>
+                <h2 class="h5 fw-bold mb-3">¿Qué necesitas?</h2>
+
+                <div class="mb-3">
+                  <label for="especialidad" class="form-label">Tipo de trabajo <span class="texto-suave fw-normal">(opcional)</span></label>
+                  <select id="especialidad" class="form-select">
+                    <option value="">Elige…</option>
+                    ${especialidades.map(e => `<option value="${e.id}">${UI.escapar(e.nombre)}</option>`).join("")}
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="descripcion" class="form-label">Describe el trabajo <span class="text-danger" aria-hidden="true">*</span></label>
+                  <textarea id="descripcion" class="form-control" rows="3" maxlength="500" required aria-describedby="ayudaDesc"
+                    placeholder="Ej.: Se va la luz al conectar la plancha."></textarea>
+                  <div id="ayudaDesc" class="form-text"><span id="contador">0</span>/500 · mínimo 10 caracteres.</div>
+                  <div class="invalid-feedback" id="errDescripcion"></div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="zona" class="form-label">Zona del trabajo <span class="text-danger" aria-hidden="true">*</span></label>
+                    <select id="zona" class="form-select" required>
+                      <option value="">Elige…</option>
+                      ${zonasPrestador.map(z => `<option value="${z.id}"${z.id === zonaParam ? " selected" : ""}>${UI.escapar(z.nombre)}</option>`).join("")}
+                    </select>
+                    <div class="form-text">Solo aparecen las zonas que este prestador atiende.</div>
+                    <div class="invalid-feedback">Elige la zona.</div>
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="referencia" class="form-label">Referencia de la dirección</label>
+                    <input id="referencia" class="form-control" maxlength="120" placeholder="Ej.: frente al parque" aria-describedby="ayudaRef">
+                    <div id="ayudaRef" class="form-text">La dirección exacta se comparte solo tras confirmar el servicio.</div>
+                  </div>
+                </div>
+
+                <fieldset class="mb-3">
+                  <legend class="form-label fs-6">¿Cuándo lo necesitas? <span class="text-danger" aria-hidden="true">*</span></legend>
+                  <div class="d-flex flex-wrap gap-2">
+                    ${permiteInmediata ? `
+                    <input type="radio" class="btn-check" name="tipoHorario" id="hInmediata" value="Inmediata" ${inmediataInicial ? "checked" : ""}>
+                    <label class="btn btn-outline-primary" for="hInmediata"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Ahora (inmediata)</label>` : ""}
+                    <input type="radio" class="btn-check" name="tipoHorario" id="hProgramada" value="Programada" ${inmediataInicial ? "" : "checked"}>
+                    <label class="btn btn-outline-primary" for="hProgramada"><i class="bi bi-calendar-event" aria-hidden="true"></i> Programar fecha</label>
+                  </div>
+                  <div id="bloqueProgramada" class="row g-3 mt-1">
+                    <div class="col-sm-6">
+                      <label for="fecha" class="form-label">Fecha</label>
+                      <input type="date" id="fecha" class="form-control" min="${hoy}">
+                      <div class="invalid-feedback">Elige la fecha.</div>
+                    </div>
+                    <div class="col-sm-6">
+                      <label for="franja" class="form-label">Franja horaria</label>
+                      <select id="franja" class="form-select">
+                        <option value="">Elige…</option>
+                        <option>08:00-12:00</option>
+                        <option>13:00-17:00</option>
+                        <option>17:00-20:00</option>
+                      </select>
+                      <div class="invalid-feedback">Elige la franja.</div>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div class="mb-3">
+                  <label for="fotos" class="form-label">Fotos <span class="texto-suave fw-normal">(opcional)</span> ${UI.etiquetaSimulado("solo se guarda el nombre del archivo")}</label>
+                  <input type="file" id="fotos" class="form-control" accept="image/*" multiple>
+                </div>
+
+                <div id="resumenErrores" class="mb-2"></div>
+                <button type="submit" id="btnEnviar" class="btn btn-acento w-100">
+                  <i class="bi bi-send" aria-hidden="true"></i> Enviar solicitud
+                </button>
+              </form>
+            </div>
+
+            <aside class="col-lg-4">
+              <section class="tarjeta">
+                <h2 class="h6 fw-bold">Tu solicitud es para</h2>
+                <p class="mb-1 fw-bold">${UI.escapar(pr.nombre)}</p>
+                <p class="mb-2"><span class="badge text-bg-primary">${UI.escapar(oficio.nombre)}</span>
+                  <span class="badge text-bg-light border">${UI.escapar(oficio.modalidad)}</span></p>
+                ${pr.calificacion.total > 0 ? `<p class="mb-2">${UI.estrellas(pr.calificacion.promedio)} <span class="small texto-suave">(${pr.calificacion.total})</span></p>` : ""}
+                <hr>
+                <ul class="small list-unstyled mb-0">
+                  ${esDiagnostico ? `<li class="mb-2"><i class="bi bi-cash-coin" aria-hidden="true"></i> <strong>Costo de visita:</strong> ${OY.formatoQ(pr.costoVisita)}. Después de la visita recibirás una cotización para aprobar.</li>` : ""}
+                  ${oficio.modalidad === "Por presupuesto" ? `<li class="mb-2"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Recibirás una cotización con mano de obra, materiales y cargos para aprobarla antes de empezar.</li>` : ""}
+                  ${oficio.modalidad === "Inmediata" ? `<li class="mb-2"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Si el prestador no responde en 30 minutos, la solicitud vence.</li>` : `<li class="mb-2"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Si el prestador no responde en 24 horas, la solicitud vence.</li>`}
+                  <li><i class="bi bi-geo-alt" aria-hidden="true"></i> Ubicación en mapa ${UI.etiquetaSimulado("mapa")}</li>
+                </ul>
+              </section>
+            </aside>
+          </div>`;
+
+        /* ---- Interacción ---- */
+        const form = document.getElementById("formSolicitud");
+        const desc = document.getElementById("descripcion");
+        const bloqueProg = document.getElementById("bloqueProgramada");
+        const radios = form.querySelectorAll("input[name=tipoHorario]");
+
+        function tipoElegido() { return form.querySelector("input[name=tipoHorario]:checked").value; }
+        function actualizarHorario() {
+          bloqueProg.classList.toggle("d-none", tipoElegido() === "Inmediata");
+        }
+        radios.forEach(r => r.addEventListener("change", actualizarHorario));
+        actualizarHorario();
+
+        desc.addEventListener("input", () => { document.getElementById("contador").textContent = desc.value.length; });
+
+        /* Validación del lado del cliente: marca cada campo incompleto. */
+        function validar() {
+          const faltan = [];
+          const marcar = (el, malo) => { el.classList.toggle("is-invalid", malo); };
+
+          const dOk = desc.value.trim().length >= 10;
+          marcar(desc, !dOk);
+          document.getElementById("errDescripcion").textContent = "Describe el trabajo con al menos 10 caracteres.";
+          if (!dOk) faltan.push("descripción (mínimo 10 caracteres)");
+
+          const zona = document.getElementById("zona");
+          marcar(zona, !zona.value);
+          if (!zona.value) faltan.push("zona");
+
+          if (tipoElegido() === "Programada") {
+            const f = document.getElementById("fecha"), fr = document.getElementById("franja");
+            const fechaMala = !f.value || f.value < hoy;
+            marcar(f, fechaMala); marcar(fr, !fr.value);
+            if (fechaMala) faltan.push(f.value ? "fecha (no puede ser pasada)" : "fecha");
+            if (!fr.value) faltan.push("franja horaria");
+          } else {
+            marcar(document.getElementById("fecha"), false);
+            marcar(document.getElementById("franja"), false);
+          }
+          return faltan;
+        }
+
+        let enviando = false;
+        form.addEventListener("submit", ev => {
+          ev.preventDefault();
+          if (enviando) return;           // segunda barrera contra duplicados
+          document.getElementById("mensaje").innerHTML = "";
+          document.getElementById("resumenErrores").innerHTML = "";
+
+          const faltan = validar();
+          if (faltan.length) {
+            UI.alerta("resumenErrores", "danger", "Faltan datos: " + faltan.join(", ") + ".");
+            const primero = form.querySelector(".is-invalid");
+            if (primero) primero.focus();
+            return;
+          }
+
+          const tipo = tipoElegido();
+          const nombresFotos = Array.from(document.getElementById("fotos").files).map(f => f.name);
+          const datos = {
+            prestadorId: pr.id,
+            oficioId: oficio.id,
+            especialidadId: document.getElementById("especialidad").value || null,
+            descripcion: desc.value,
+            zonaId: document.getElementById("zona").value,
+            direccionReferencia: document.getElementById("referencia").value.trim(),
+            horario: tipo === "Inmediata"
+              ? { tipo: "Inmediata", fecha: hoy, franja: "Ahora" }
+              : { tipo: "Programada", fecha: document.getElementById("fecha").value, franja: document.getElementById("franja").value },
+            fotos: nombresFotos
+          };
+
+          if (!navigator.onLine) {
+            UI.alerta("resumenErrores", "warning", "No hay conexión. Revisa tu internet e inténtalo de nuevo; tus datos no se han perdido.");
+            return;
+          }
+
+          enviando = true;
+          const btn = document.getElementById("btnEnviar");
+          UI.bloquearBoton(btn, "Enviando…");
+
+          /* Pausa breve que simula la red; permite ver el bloqueo del botón. */
+          setTimeout(() => {
+            const r = OY.crearSolicitud(datos, claveEnvio);
+            if (!r.ok) {
+              enviando = false;
+              UI.liberarBoton(btn);
+              UI.alerta("resumenErrores", "danger", r.error);
+              return;
+            }
+            window.location.href = "seguimiento.html?solicitud=" + encodeURIComponent(r.dato.id);
+          }, 600);
+        });
+      }
+    }
   </script>
 </body>
 </html>
