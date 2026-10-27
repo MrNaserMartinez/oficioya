@@ -129,3 +129,94 @@ a { color: var(--oy-primario); }
 /* ---------- Accesibilidad ---------- */
 :focus-visible { outline: 3px solid var(--oy-acento); outline-offset: 2px; }
 .form-label { font-weight: 600; }
+
+/* =========================================================
+   Integrante 2 — Inicio, búsqueda y "sin prestadores"
+   ========================================================= */
+
+/* ---------- Portada (index.html) ---------- */
+.portada {
+  background: linear-gradient(135deg, var(--oy-primario), var(--oy-primario-oscuro));
+  color: #fff; border-radius: var(--oy-radio);
+  padding: 2rem 1.5rem; margin-top: 1.5rem;
+}
+.portada .texto-portada { color: rgba(255, 255, 255, .88); }
+.portada .zona-portada {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: rgba(255, 255, 255, .12); border-radius: 999px;
+  padding: .2rem .75rem; font-size: .85rem;
+}
+.btn-urgente { font-size: 1.15rem; padding: .8rem 1.4rem; font-weight: 700; }
+
+/* ---------- Tarjetas de oficio ---------- */
+.tarjeta-oficio {
+  display: flex; flex-direction: column; height: 100%;
+  text-decoration: none; color: inherit;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.tarjeta-oficio:hover, .tarjeta-oficio:focus-visible {
+  color: inherit; transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(20, 30, 45, .12);
+}
+.icono-oficio {
+  width: 3rem; height: 3rem; border-radius: 12px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; background: #fdf0e6; color: var(--oy-acento-oscuro);
+}
+.etiqueta-modalidad {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .78rem; font-weight: 600; padding: .15rem .55rem;
+  border-radius: 999px; background: #e8eefb; color: var(--oy-primario);
+  border: 1px solid #bccbf0;
+}
+
+/* ---------- Pasos "cómo funciona" ---------- */
+.paso-numero {
+  width: 2rem; height: 2rem; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--oy-primario); color: #fff; font-weight: 700;
+}
+
+/* ---------- Búsqueda: aviso del flujo inmediato ---------- */
+.aviso-inmediato {
+  border-left: 4px solid var(--oy-acento);
+  background: #fff7f0;
+}
+
+/* ---------- Mapa simulado por sectores ---------- */
+.mapa-simulado {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 62px); gap: 6px;
+  background: #eef1f5; border-radius: var(--oy-radio); padding: 8px;
+}
+.sector {
+  border: 1px solid var(--oy-borde); background: var(--oy-superficie);
+  border-radius: 8px; font-size: .78rem; line-height: 1.15;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--oy-texto); text-align: center; padding: 2px;
+}
+.sector .conteo { font-weight: 700; font-size: 1rem; }
+.sector.activo { border: 2px solid var(--oy-acento); background: #fff4eb; font-weight: 600; }
+.sector.sin-prestadores { color: var(--oy-texto-suave); background: #f7f8fa; }
+.sector-libre { visibility: hidden; }
+
+/* ---------- Sellos en resultados ---------- */
+.sello {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .78rem; font-weight: 600; padding: .15rem .55rem;
+  border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+}
+.sello-verificado { background: #e5f5ea; color: #19693a; border-color: #b4dfc2; }
+.sello-pendiente  { background: #ececec; color: #4a4a4a; border-color: #cfcfcf; }
+.sello-ahora      { background: #fff4e0; color: #8a5200; border-color: #f3d39a; }
+.resultado-prestador .nombre { font-weight: 700; font-size: 1.05rem; }
+.resultado-prestador.destacado { border: 2px solid var(--oy-acento); }
+
+/* ---------- Sin resultados: alternativas ---------- */
+.alternativa {
+  display: flex; gap: .75rem; align-items: flex-start;
+  text-decoration: none; color: inherit; height: 100%;
+}
+.alternativa:hover, .alternativa:focus-visible { color: inherit; box-shadow: 0 6px 18px rgba(20, 30, 45, .12); }
+.alternativa .bi { font-size: 1.4rem; color: var(--oy-acento-oscuro); }
+.estado-vacio .sello .bi { font-size: inherit; display: inline; margin: 0; color: inherit; }

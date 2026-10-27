@@ -11,33 +11,81 @@
 <body data-base="">
   <div id="navbar"></div>
 
+  <!-- =====================================================
+       Inicio y selección de oficio — Responsable: Integrante 2
+       Requisitos: RF04 (punto de entrada a la búsqueda)
+       Necesidades: N01 (encontrar rápido a quién llamar),
+                    N02 (saber cómo cobra cada oficio)
+       ===================================================== -->
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Inicio y selección de oficio</h1>
-    <div id="mensaje"></div>
+    <h1 class="visually-hidden">Inicio y selección de oficio</h1>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
-         Requisito(s): RF04
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 2</strong> · RF04</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Mensaje de bienvenida y explicación corta de la plataforma</li>
-        <li>Tarjetas de los oficios activos (OY.listar("oficios", o => o.activo)) con su ícono y modalidad</li>
-        <li>Al tocar un oficio → cliente/busqueda.html?oficio=OF01</li>
-        <li>Botón grande "Pinchazo ahora" para la modalidad inmediata</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.listar("oficios", filtro)</code></li>
-        <li><code>OY.usuarioActual()</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Visible sin iniciar sesión.</p>
+    <!-- Portada -->
+    <section class="portada" aria-labelledby="tituloPortada">
+      <span class="zona-portada"><i class="bi bi-geo-alt" aria-hidden="true"></i> Jutiapa cabecera</span>
+      <h2 id="tituloPortada" class="h2 fw-bold mt-3 mb-2"><span id="saludo">¿Qué necesitas</span> resolver hoy?</h2>
+      <p class="texto-portada mb-4">OficioYa te conecta con prestadores de oficios de tu zona. Eliges a quién contratar,
+        recibes la cotización antes de que empiece el trabajo y al final calificas el servicio.</p>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a class="btn btn-acento btn-urgente" id="btnPinchazoAhora" href="cliente/busqueda.html?oficio=OF01&amp;ahora=1">
+          <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Pinchazo ahora
+        </a>
+        <a class="btn btn-outline-light" href="cliente/busqueda.html">
+          <i class="bi bi-search" aria-hidden="true"></i> Ver todos los prestadores
+        </a>
+      </div>
+      <p class="small texto-portada mt-3 mb-0" id="ayudaPinchazo">
+        Para llantas ponchadas de moto o carro: te mostramos quién puede llegar en este momento.
+      </p>
     </section>
+
+    <div id="mensaje" class="mt-3"></div>
+
+    <!-- Resumen del cliente en sesión -->
+    <section id="resumenCliente" class="tarjeta mt-3 d-none" aria-live="polite"></section>
+
+    <!-- Oficios activos -->
+    <section class="mt-4" aria-labelledby="tituloOficios">
+      <h2 id="tituloOficios" class="h4 fw-bold mb-1">Elige un oficio</h2>
+      <p class="texto-suave mb-3">Cada oficio trabaja de forma distinta. Así sabrás qué esperar antes de pedir.</p>
+      <div class="row g-3" id="listaOficios"></div>
+    </section>
+
+    <!-- Cómo funciona -->
+    <section class="mt-5" aria-labelledby="tituloPasos">
+      <h2 id="tituloPasos" class="h4 fw-bold mb-3">¿Cómo funciona?</h2>
+      <ol class="row g-3 list-unstyled mb-0">
+        <li class="col-sm-6 col-lg-3">
+          <div class="tarjeta h-100 d-flex gap-3">
+            <span class="paso-numero" aria-hidden="true">1</span>
+            <div><h3 class="h6 fw-bold mb-1">Busca</h3><p class="small texto-suave mb-0">Filtra por oficio, sector y si atienden ahora mismo.</p></div>
+          </div>
+        </li>
+        <li class="col-sm-6 col-lg-3">
+          <div class="tarjeta h-100 d-flex gap-3">
+            <span class="paso-numero" aria-hidden="true">2</span>
+            <div><h3 class="h6 fw-bold mb-1">Solicita</h3><p class="small texto-suave mb-0">Describe el problema y elige el horario. Tu dirección exacta solo la ve el prestador que aceptes.</p></div>
+          </div>
+        </li>
+        <li class="col-sm-6 col-lg-3">
+          <div class="tarjeta h-100 d-flex gap-3">
+            <span class="paso-numero" aria-hidden="true">3</span>
+            <div><h3 class="h6 fw-bold mb-1">Aprueba la cotización</h3><p class="small texto-suave mb-0">Ves mano de obra, materiales y cargos por separado antes de que empiece el trabajo.</p></div>
+          </div>
+        </li>
+        <li class="col-sm-6 col-lg-3">
+          <div class="tarjeta h-100 d-flex gap-3">
+            <span class="paso-numero" aria-hidden="true">4</span>
+            <div><h3 class="h6 fw-bold mb-1">Sigue y califica</h3><p class="small texto-suave mb-0">Revisa el avance y, cuando el servicio esté finalizado, deja tu calificación.</p></div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <p class="small texto-suave mt-4 mb-0">
+      <i class="bi bi-info-circle" aria-hidden="true"></i>
+      Prototipo académico: los datos son ficticios. El sello <em>Verificado</em> indica qué se revisó del prestador; no es una garantía de calidad.
+    </p>
   </main>
 
   <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -46,7 +94,96 @@
   <script src="js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina();
-    // Tu código aquí.
+
+    /* Explicación corta de cada modalidad (glosario del proyecto). */
+    const EXPLICA_MODALIDAD = {
+      "Inmediata":       { icono: "bi-lightning-charge", texto: "Atención lo antes posible. Si nadie responde en 30 minutos, la solicitud vence." },
+      "Diagnóstico":     { icono: "bi-clipboard-pulse",  texto: "Se cobra la visita de revisión y después se cotiza el trabajo." },
+      "Por presupuesto": { icono: "bi-rulers",           texto: "Apruebas el alcance y el precio antes de que empiece el trabajo." },
+      "Programada":      { icono: "bi-calendar-event",   texto: "Acuerdas una fecha y una franja horaria." }
+    };
+
+    /* ---------- Tarjetas de oficios activos ---------- */
+    function pintarOficios() {
+      const oficios = OY.listar("oficios", o => o.activo);
+      const cont = document.getElementById("listaOficios");
+      if (oficios.length === 0) {
+        cont.innerHTML = `<div class="col-12"><div class="tarjeta estado-vacio">
+          <i class="bi bi-tools" aria-hidden="true"></i>
+          <p class="mb-0">Por ahora no hay oficios activos. Vuelve más tarde.</p></div></div>`;
+        return;
+      }
+      cont.innerHTML = oficios.map(o => {
+        const total = OY.buscarPrestadores({ oficioId: o.id }).length;
+        const ahora = OY.buscarPrestadores({ oficioId: o.id, disponibleAhora: true }).length;
+        const m = EXPLICA_MODALIDAD[o.modalidad] || { icono: "bi-tools", texto: "" };
+        const especialidades = OY.listar("especialidades", e => e.oficioId === o.id && e.activo).map(e => e.nombre);
+        const textoDisponibles = o.modalidad === "Inmediata"
+          ? `${ahora} disponible${ahora === 1 ? "" : "s"} ahora · ${total} en total`
+          : `${total} prestador${total === 1 ? "" : "es"}`;
+        return `
+          <div class="col-md-6 col-lg-4">
+            <a class="tarjeta tarjeta-oficio" href="cliente/busqueda.html?oficio=${encodeURIComponent(o.id)}"
+               aria-label="Buscar ${UI.escapar(o.nombre)}. Modalidad ${UI.escapar(o.modalidad)}. ${textoDisponibles}">
+              <div class="d-flex gap-3 align-items-center mb-2">
+                <span class="icono-oficio"><i class="bi ${UI.escapar(o.icono)}" aria-hidden="true"></i></span>
+                <div>
+                  <h3 class="h5 fw-bold mb-1">${UI.escapar(o.nombre)}</h3>
+                  <span class="etiqueta-modalidad"><i class="bi ${m.icono}" aria-hidden="true"></i> ${UI.escapar(o.modalidad)}</span>
+                </div>
+              </div>
+              <p class="small mb-2">${UI.escapar(m.texto)}</p>
+              ${especialidades.length ? `<p class="small texto-suave mb-2">${especialidades.map(UI.escapar).join(" · ")}</p>` : ""}
+              <p class="small fw-semibold mt-auto mb-0"><i class="bi bi-people" aria-hidden="true"></i> ${textoDisponibles}
+                <span class="float-end">Buscar <i class="bi bi-arrow-right" aria-hidden="true"></i></span></p>
+            </a>
+          </div>`;
+      }).join("");
+    }
+
+    /* ---------- Saludo y resumen si hay un cliente en sesión ---------- */
+    function pintarResumen() {
+      const caja = document.getElementById("resumenCliente");
+      if (u && u.rol === "cliente") {
+        document.getElementById("saludo").textContent = `Hola, ${u.persona.nombres}. ¿Qué necesitas`;
+        const activas = OY.solicitudesDelUsuario().filter(s => !OY.ESTADOS_FINALES.includes(s.estado));
+        if (activas.length) {
+          const s = activas[0];
+          caja.innerHTML = `
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+              <div>
+                <p class="fw-semibold mb-1"><i class="bi bi-clock-history" aria-hidden="true"></i>
+                  Tienes ${activas.length} solicitud${activas.length === 1 ? "" : "es"} en curso</p>
+                <p class="small texto-suave mb-0">Más reciente: ${UI.escapar(s.id)} · ${UI.escapar(OY.nombreOficio(s.oficioId))} con
+                  ${UI.escapar(OY.nombrePrestador(s.prestadorId))} ${UI.badgeEstado(s.estado)}</p>
+              </div>
+              <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="cliente/seguimiento.html?solicitud=${encodeURIComponent(s.id)}">Ver seguimiento</a>
+                <a class="btn btn-sm btn-outline-secondary" href="cliente/historial.html">Mis solicitudes</a>
+              </div>
+            </div>`;
+          caja.classList.remove("d-none");
+        }
+      } else if (!u) {
+        caja.innerHTML = `<p class="small mb-0"><i class="bi bi-person" aria-hidden="true"></i>
+          Puedes buscar y ver perfiles sin cuenta. Para pedir un servicio necesitas
+          <a href="acceso/login.html">ingresar</a> o <a href="acceso/registro.html">crear tu cuenta</a>.</p>`;
+        caja.classList.remove("d-none");
+      }
+    }
+
+    /* El botón "Pinchazo ahora" solo tiene sentido si el oficio de pinchazos está activo. */
+    function revisarBotonUrgente() {
+      const pinchazos = OY.obtener("oficios", "OF01");
+      if (!pinchazos || !pinchazos.activo) {
+        document.getElementById("btnPinchazoAhora").classList.add("d-none");
+        document.getElementById("ayudaPinchazo").classList.add("d-none");
+      }
+    }
+
+    pintarOficios();
+    pintarResumen();
+    revisarBotonUrgente();
   </script>
 </body>
 </html>
