@@ -73,7 +73,7 @@
 | 8 | Modelo de datos y estados | MER simplificado, entidades principales y línea de estados. | Integrante 4 |
 | 9 | Pantallas clave | Capturas: inicio/búsqueda, perfil, solicitud, cotización, bandeja, seguimiento, calificación, admin. | Todos |
 | 10 | Reglas de negocio | Doble aceptación, vencimiento, agenda, calificación única, permisos, privacidad. | Integrante 3 |
-| 11 | Pruebas | Plan, 29 casos, 23 verificaciones de humo, prueba con 5 personas. Mostrar **resultados reales** o “pendiente” si aún no se ejecutó. | Mario |
+| 11 | Pruebas | Plan, 37 casos, 23 verificaciones de humo, 36 aprobados y 1 fallido, prueba con 5 personas pendiente. Mostrar **resultados reales** o “pendiente” si aún no se ejecutó. | Mario |
 | 12 | Despliegue y operación | GitHub Pages, respaldo local, soporte, mantenimiento y retiro. | Mario |
 | 13 | Indicadores | Fórmulas y ejemplo con datos ficticios; aclarar que no son métricas reales. | Mario |
 | 14 | Conclusiones y cierre | Qué se aprendió, limitaciones, siguiente paso si el proyecto continuara, gracias y preguntas. | Mario/Naser |
@@ -88,11 +88,11 @@
 
 ### 3.1 Pruebas
 
-“Mi parte es la de pruebas, despliegue y entrega. Diseñé 29 casos de prueba, cada uno con requisito, precondiciones, pasos y resultado esperado. Los agrupé en acceso, bandeja, historial, calificación, reclamos, excepciones y flujo completo.
+“Mi parte es la de pruebas, despliegue y entrega. Diseñé 37 casos de prueba, cada uno con requisito, precondiciones, pasos y resultado esperado; cubren acceso, búsqueda, solicitud, bandeja, cotización, seguimiento, historial, calificación, reclamos, permisos, excepciones y consistencia.
 
 Antes de la sesión formal ejecuté una verificación técnica de humo sobre las seis pantallas y el núcleo: 23 comprobaciones, 23 correctas. Eso me permitió detectar y corregir, por ejemplo, que un botón de confirmación quedaba deshabilitado después de una acción y que el segundo paso de avance no se ejecutaba.
 
-La prueba formal en navegador y la prueba de usabilidad con cinco personas se ejecutan el 29 de octubre. Los resultados se registran con evidencia; no los inventamos. Si un caso falla, se abre un defecto con severidad y responsable.”
+Después ejecuté los 37 casos en Edge real, sobre la versión integrada de `main`: 36 aprobados y 1 fallido. El fallo es PRU-35: las pantallas de error y sin conexión existen, pero la app no redirige a ellas; quedó registrado como DEF-01. También apareció un defecto menor de ortografía, DEF-02. La prueba de usabilidad con cinco personas sigue pendiente porque no hemos tenido participantes reales; no la inventamos.”
 
 **Mostrar:** tabla de casos y, si ya existen, capturas de la sesión.
 
@@ -100,13 +100,13 @@ La prueba formal en navegador y la prueba de usabilidad con cinco personas se ej
 
 “La bandeja del prestador usa las mismas reglas del núcleo. El prestador solo ve sus solicitudes. Si una solicitud está en `Solicitada`, puede aceptarla, rechazarla con motivo o dejarla vencer; el sistema la marca `Vencida` cuando se agota el plazo. Al aceptar, pasa a `En evaluación` y aparece el enlace para cotizar. Cuando el cliente aprueba, pasa a `Confirmada`; ahí recién se muestra la dirección exacta. Luego el prestador la inicia, la marca `En ejecución` y al terminar `Finalizada`. El cliente recién ahí puede calificar.”
 
-**Cadena para explicar:** “La necesidad de responder rápido se convierte en RF07/RF09; el diseño es la bandeja y la tabla de transiciones; la prueba es PRU-05, PRU-09 y PRU-10.”
+**Cadena para explicar:** “La necesidad de responder rápido se convierte en RF07/RF09; el diseño es la bandeja y la tabla de transiciones; las pruebas son PRU-12, PRU-13, PRU-18 y PRU-30.”
 
 ### 3.3 Historial, calificación y reclamo
 
 “El historial permite filtrar por activas, cerradas o por calificar. El botón de calificar solo aparece si el servicio está `Finalizada` y no tiene calificación. La pantalla de calificar usa radios con texto, no solo estrellas, para que sea accesible. El reclamo exige motivo y descripción, permite evidencia simulada y se ve en el panel de Soporte. Si la solicitud apenas está `Solicitada`, no se permite reclamar: se explica que primero se cancele.”
 
-**Cadena:** “RF12 → calificar.html → `OY.puedeCalificar`/`OY.calificar` → PRU-15 a PRU-19.”
+**Cadena:** “RF12 → calificar.html → `OY.puedeCalificar`/`OY.calificar` → PRU-22 y PRU-23.”
 
 ### 3.4 Despliegue y operación
 

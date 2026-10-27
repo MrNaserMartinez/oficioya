@@ -31,11 +31,11 @@ En mi parte, la cadena se concreta así:
 
 | Necesidad | Requisito | Pantalla / diseño | Funciones del núcleo | Pruebas |
 |---|---|---|---|---|
-| El prestador necesita enterarse de las solicitudes y responder a tiempo. | RF07, RF09 | `prestador/bandeja.html` | `OY.solicitudesDelUsuario`, `OY.accionesPermitidas`, `OY.cambiarEstado`, `OY.historialDe` | PRU-04 a PRU-10 |
-| El cliente necesita consultar lo que pidió y su estado. | RF13 | `cliente/historial.html` | `OY.solicitudesDelUsuario`, `OY.cotizacionDeSolicitud`, `OY.puedeCalificar` | PRU-11 a PRU-14 |
-| El cliente necesita calificar solo un servicio terminado. | RF12 | `cliente/calificar.html` | `OY.puedeCalificar`, `OY.calificar` | PRU-15 a PRU-19 |
-| Cliente o prestador necesitan reclamar y que Soporte atienda. | RF11 | `cliente/reclamo.html` + panel de Soporte | `OY.crearReclamo`, `OY.atenderReclamo` | PRU-20 a PRU-23 |
-| La persona necesita una salida clara si algo falla o no hay internet. | RNF de usabilidad y disponibilidad | `estados/error.html`, `estados/sin-conexion.html` | `navigator.onLine`, `UI.iniciarPagina` | PRU-24 a PRU-26 |
+| El prestador necesita enterarse de las solicitudes y responder a tiempo. | RF07, RF09 | `prestador/bandeja.html` | `OY.solicitudesDelUsuario`, `OY.accionesPermitidas`, `OY.cambiarEstado`, `OY.historialDe` | PRU-12, PRU-13, PRU-14, PRU-18, PRU-26, PRU-30 |
+| El cliente necesita consultar lo que pidió y su estado. | RF13 | `cliente/historial.html` | `OY.solicitudesDelUsuario`, `OY.cotizacionDeSolicitud`, `OY.puedeCalificar` | PRU-24 |
+| El cliente necesita calificar solo un servicio terminado. | RF12 | `cliente/calificar.html` | `OY.puedeCalificar`, `OY.calificar` | PRU-22, PRU-23 |
+| Cliente o prestador necesitan reclamar y que Soporte atienda. | RF11 | `cliente/reclamo.html` + panel de Soporte | `OY.crearReclamo`, `OY.atenderReclamo` | PRU-21, PRU-32 |
+| La persona necesita una salida clara si algo falla o no hay internet. | RNF de usabilidad y disponibilidad | `estados/error.html`, `estados/sin-conexion.html` | `navigator.onLine`, `UI.iniciarPagina` | PRU-34, PRU-35 |
 
 ---
 
@@ -63,18 +63,18 @@ Verificar que las pantallas y reglas del módulo asignado funcionan de forma coh
 - Pruebas de seguridad de contraseñas: en el prototipo se guardan sin cifrar por decisión de simplificación.
 - Mapas, pagos, notificaciones y correo reales: son simulados y se marcan como tales.
 - Pruebas de usabilidad con personas reales: se planifican aquí, pero sus resultados se registran después de la sesión.
-- Pantallas de cotización y seguimiento: pertenecen al Integrante 4; se prueban en la integración del 29/10.
+- Pantallas de cotización y seguimiento: pertenecen al Integrante 4; ya están integradas en `main` y se probaron en la ejecución del 26/10 (PRU-15 a PRU-19 y PRU-27).
 
 ### 1.3 Estrategia y niveles
 
 | Nivel | Qué se hace | Cuándo |
 |---|---|---|
 | Humo | Abrir cada pantalla, iniciar sesión y comprobar que no hay errores en consola. | Cada cambio y antes de la demo. |
-| Funcional | Ejecutar los casos PRU-01 a PRU-29 con los datos de prueba. | 28 y 29 de octubre. |
-| Límites y excepciones | Sin motivo, sin estrellas, solicitud vencida, servicio no finalizado, sin conexión, sin resultados. | 29 de octubre. |
-| Permisos | Entrar con cada rol y comprobar que no se puede actuar sobre solicitudes ajenas. | 29 de octubre. |
-| Integración | Flujo completo entre las pantallas de todos los integrantes. | 29 de octubre. |
-| Usabilidad | 5 personas representativas con tareas guiadas. | 29 de octubre. |
+| Funcional | Ejecutar los casos PRU-01 a PRU-37 con los datos de prueba. | 26 de octubre (ejecutado). |
+| Límites y excepciones | Sin motivo, sin estrellas, solicitud vencida, servicio no finalizado, sin conexión, sin resultados. | 26 de octubre (ejecutado). |
+| Permisos | Entrar con cada rol y comprobar que no se puede actuar sobre solicitudes ajenas. | 26 de octubre (ejecutado). |
+| Integración | Flujo completo entre las pantallas de todos los integrantes. | 26 de octubre (ejecutado). |
+| Usabilidad | 5 personas representativas con tareas guiadas. | Pendiente: sin participantes reales. |
 | Regresión | Repetir los casos críticos después de unir los Pull Requests. | 29 y 30 de octubre. |
 
 ### 1.4 Entorno y datos de prueba
@@ -132,9 +132,9 @@ Usuarios mínimos para probar:
 |---|---|---|
 | Mar 27/10 | Entrevistas, base del proyecto y avance del documento. | Todos |
 | Mié 28/10 | Programar pantallas; primera pasada de humo por módulo. | Todos |
-| Jue 29/10 | Integrar PR, ejecutar PRU-01 a PRU-29, prueba con 5 personas y registrar defectos. | Mario + equipo |
+| Jue 29/10 | Integrar PR, repetir la regresión de los 37 casos y completar la prueba con 5 personas. | Mario + equipo |
 | Jue 29/10, 6:00 p. m. | Entregar sección en la plantilla de Word. | Todos |
-| Vie 30/10 | Regresión, ensayo, revisión final y defensa. | Todos |
+| Vie 30/10 | Registrar resultados de usabilidad, cerrar defectos, regresión, ensayo y revisión final. | Todos |
 
 ### 1.8 Gestión de defectos
 
@@ -157,16 +157,16 @@ La columna **Necesidad** se completa con los códigos N01, N02… de la lista de
 
 | Necesidad | RF | Pantalla / regla | Casos de prueba |
 |---|---|---|---|
-| N__ | RF07, RF09 | Bandeja del prestador; transiciones de estado; doble aceptación. | PRU-04 a PRU-10 |
-| N__ | RF13 | Historial; consulta por estado. | PRU-11 a PRU-14 |
-| N__ | RF12 | Calificación; solo `Finalizada` y una vez. | PRU-15 a PRU-19 |
-| N__ | RF11 | Reclamo; motivo, descripción, evidencia y atención de Soporte. | PRU-20 a PRU-23 |
-| N__ | RNF de usabilidad / disponibilidad | Pantallas de error y sin conexión. | PRU-24 a PRU-26 |
-| N__ | RF06–RF10 | Flujo completo entre módulos. | PRU-28 |
+| N__ | RF07, RF09 | Bandeja del prestador; transiciones de estado; doble aceptación. | PRU-12, PRU-13, PRU-14, PRU-18, PRU-26, PRU-30 |
+| N__ | RF13 | Historial; consulta por estado. | PRU-24 |
+| N__ | RF12 | Calificación; solo `Finalizada` y una vez. | PRU-22, PRU-23 |
+| N__ | RF11 | Reclamo; motivo, descripción, evidencia y atención de Soporte. | PRU-21, PRU-32 |
+| N__ | RNF de usabilidad / disponibilidad | Pantallas de error y sin conexión. | PRU-34, PRU-35 |
+| N__ | RF06–RF10 | Flujo completo entre módulos. | PRU-10, PRU-15, PRU-16, PRU-18, PRU-22 |
 
 ### 1.10 Casos de prueba
 
-El detalle de los 29 casos está en **`docs/05-casos-de-prueba.md`**. Cada caso incluye requisito, precondiciones, pasos, resultado esperado, tipo y espacio para el resultado real.
+El detalle de los **37 casos** está en la Tabla 3 del Word y su ejecución real en **`docs/05-casos-de-prueba.md`**. Cada fila incluye requisito, tipo, resultado, evidencia y estado.
 
 ### 1.11 Verificación técnica ejecutada el 26/10/2026
 
@@ -184,7 +184,22 @@ Antes de la sesión formal se ejecutó una verificación de humo sobre las seis 
 | Bandeja: rechazo después de aceptar, enlaces de reclamo y recuperación del botón Reintentar | 4 | Aprobado |
 | **Total** | **23** | **23/23** |
 
-Esta verificación no reemplaza la prueba en navegador real con clics, teclado, lector de pantalla y los 5 participantes. Esos resultados quedan pendientes y deben registrarse con evidencia.
+Esta verificación no reemplaza la prueba en navegador real con clics, teclado y lector de pantalla. Esa prueba se ejecutó después (sección 1.12); la prueba con los 5 participantes sigue pendiente y debe registrarse con evidencia.
+
+### 1.12 Ejecución formal en navegador — 26/10/2026
+
+Se ejecutaron los **37 casos** del Word en Microsoft Edge real (modo headless, Playwright 1.64.1), sobre la versión integrada de `main` (commit `c766d73`) servida localmente en `http://127.0.0.1:8000`. Cada caso se abrió en un contexto nuevo con los datos de prueba reiniciados y dejó captura en `evidencias/`.
+
+| Resultado | Casos |
+|---|---|
+| Aprobados | 36 |
+| Fallidos | 1 (PRU-35) |
+| Pendientes | 0 |
+
+- **PRU-35 (Fallido, DEF-01):** las pantallas `estados/sin-conexion.html` y `estados/error.html` existen y funcionan al abrirlas directamente, pero la aplicación no redirige a ellas sin conexión ni ante una ruta inexistente.
+- **PRU-22 (Aprobado con observación, DEF-02):** el perfil muestra «2 calificaciónes»; es un defecto de ortografía de severidad baja.
+- El detalle por caso está en `docs/05-casos-de-prueba.md` y en la Tabla 4 del Word.
+- **La prueba de usabilidad con cinco personas no se ejecutó**: no hubo participantes reales. Las Tablas 5 y 6 del Word y la sección 2 de este documento quedan pendientes.
 
 ---
 
@@ -252,6 +267,8 @@ El moderador no debe ayudar con la respuesta. Si la persona se bloquea, puede de
 
 ### 2.7 Plantilla de resultados (completar después de la sesión real)
 
+> **Estado: pendiente.** La sesión con cinco participantes no se ha realizado por falta de participantes reales. Esta tabla y la de hallazgos (2.9) no deben completarse con supuestos; se llenarán solo con lo observado.
+
 | Participante | Perfil | T1 | T2 | T3 | T4 | T5 | T6 | T7 | SEQ promedio | Comentario principal |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P01 |  |  |  |  |  |  |  |  |  |  |
@@ -306,9 +323,11 @@ Estas no son fallas ocultas: son decisiones del alcance y deben explicarse en la
 
 | ID | Fecha | Pantalla / caso | Descripción | Severidad | Prioridad | Estado | Responsable | Evidencia |
 |---|---|---|---|---|---|---|---|---|
-| DEF-01 | 26/10/2026 | Bandeja / PRU-06, PRU-10 | Los botones Confirmar de los modales quedaban deshabilitados después del primer uso; no se podía rechazar o cancelar una segunda solicitud sin recargar. | Alta | Alta | Cerrado | Mario | Humo 23/23 |
+| DEF-01 | 26/10/2026 | `estados/sin-conexion.html`, `estados/error.html` / PRU-35 | Sin conexión solo aparece la franja de aviso y al navegar se ve el error del navegador; una ruta inexistente devuelve el 404 del servidor. Las pantallas existen y funcionan al abrirlas directamente. | Media | Media | Abierto | Mario (integración) / por asignar | `evidencias/PRU-35_banner.png`, `PRU-35_error.png`, `PRU-35_ruta.png` |
+| DEF-02 | 26/10/2026 | `cliente/perfil-prestador.html`, `cliente/busqueda.html` / PRU-22 | Plural incorrecto «calificaciónes» en lugar de «calificaciones» cuando el prestador tiene dos o más calificaciones. | Baja | Baja | Abierto | Integrante 2 (búsqueda y perfil) | `evidencias/PRU-22_perfil.png` |
+| DEF-03 | 26/10/2026 | Bandeja / PRU-12, PRU-13, PRU-20 | Los botones Confirmar de los modales quedaban deshabilitados después del primer uso; no se podía rechazar o cancelar una segunda solicitud sin recargar. | Alta | Alta | Cerrado | Mario | Humo 23/23 y ejecución formal |
 
-El registro completo está en `docs/05-registro-defectos.csv`. Los defectos que aparezcan en la sesión formal y en la usabilidad se agregan allí con su evidencia; no se copian aquí hasta estar verificados.
+El registro completo está en `docs/05-registro-defectos.csv`. Esta tabla resume los defectos de la ejecución formal. Los hallazgos de usabilidad se agregarán cuando exista la sesión real con participantes.
 
 ### 3.3 Mejoras propuestas
 
@@ -646,7 +665,7 @@ Para transparencia y coherencia con el enunciado del proyecto:
 
 ## 12. Anexos
 
-- `docs/05-casos-de-prueba.md`: detalle de los 29 casos.
+- `docs/05-casos-de-prueba.md`: ejecución real de los 37 casos.
 - `docs/05-registro-defectos.csv`: plantilla para registrar defectos.
 - `docs/05-guion-defensa-y-diapositivas.md`: estructura del Word, guion de defensa y esquema de diapositivas.
 - Usuarios de prueba: ver README del repositorio.
