@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bandeja del prestador | OficioYa Jutiapa</title>
+  <title>Mi bandeja | OficioYa Jutiapa</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../css/estilos.css">
@@ -12,36 +12,107 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Bandeja del prestador</h1>
-    <div id="mensaje"></div>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <div>
+        <h1 class="titulo-pagina h3 mb-1">Mi bandeja</h1>
+        <p class="texto-suave mb-0" id="resumenBandeja">Solicitudes que los clientes te han enviado.</p>
+      </div>
+      <button class="btn btn-outline-primary btn-sm mt-3" id="btnActualizar" type="button">
+        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Actualizar
+      </button>
+    </div>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): RF07, RF09
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · RF07, RF09</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Lista de OY.solicitudesDelUsuario() agrupada: Nuevas, En curso, Cerradas</li>
-        <li>En "Solicitada": Aceptar (→ "En evaluación") o Rechazar con motivo; mostrar cuánto falta para que venza (fechaLimite)</li>
-        <li>Desde "En evaluación" → botón a cotizacion.html?solicitud=</li>
-        <li>Confirmadas: marcar "En ejecución" y luego "Finalizada"</li>
-        <li>La dirección exacta solo se muestra cuando está Confirmada (privacidad)</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.solicitudesDelUsuario()</code></li>
-        <li><code>OY.accionesPermitidas(id)</code></li>
-        <li><code>OY.cambiarEstado(id, nuevo, motivo)</code></li>
-        <li><code>UI.badgeEstado(estado)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">herrero@demo.com tiene SOL-0005 nueva. electricista@demo.com (rol prestador) tiene varias.</p>
+    <div id="mensaje"></div>
+    <div id="avisoPerfil"></div>
+    <div class="row g-3 my-1" id="contadores" aria-label="Resumen de mi bandeja"></div>
+
+    <section class="tarjeta mb-3" aria-label="Buscar y filtrar solicitudes">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-7">
+          <label for="buscar" class="form-label small">Buscar en mi bandeja</label>
+          <div class="input-group">
+            <span class="input-group-text" id="iconoBuscar"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input type="search" class="form-control" id="buscar" placeholder="Cliente, oficio, zona o número de solicitud" aria-describedby="iconoBuscar">
+          </div>
+        </div>
+        <div class="col-md-5">
+          <span class="form-label small d-block" id="etiquetaFiltro">Mostrar</span>
+          <div class="btn-group w-100" role="group" aria-labelledby="etiquetaFiltro">
+            <input type="radio" class="btn-check" name="filtro" id="fTodas" value="todas" checked>
+            <label class="btn btn-outline-primary btn-sm" for="fTodas">Todas</label>
+            <input type="radio" class="btn-check" name="filtro" id="fNuevas" value="nuevas">
+            <label class="btn btn-outline-primary btn-sm" for="fNuevas">Nuevas</label>
+            <input type="radio" class="btn-check" name="filtro" id="fEnCurso" value="encurso">
+            <label class="btn btn-outline-primary btn-sm" for="fEnCurso">En curso</label>
+            <input type="radio" class="btn-check" name="filtro" id="fCerradas" value="cerradas">
+            <label class="btn btn-outline-primary btn-sm" for="fCerradas">Cerradas</label>
+          </div>
+        </div>
+      </div>
     </section>
+
+    <div id="listaBandeja"></div>
   </main>
+
+  <!-- Modal: motivo obligatorio para rechazar o cancelar -->
+  <div class="modal fade" id="modalMotivo" tabindex="-1" aria-labelledby="tituloMotivo" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formMotivo" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloMotivo">Indica el motivo</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small texto-suave" id="textoMotivo"></p>
+          <label for="motivoTexto" class="form-label">Motivo <span class="text-danger" aria-hidden="true">*</span></label>
+          <textarea class="form-control" id="motivoTexto" rows="3" maxlength="200" required aria-describedby="ayudaMotivo"></textarea>
+          <div class="invalid-feedback" id="errorMotivo">Escribe un motivo de al menos 5 caracteres.</div>
+          <div class="form-text" id="ayudaMotivo">El cliente verá este motivo en el historial de la solicitud.</div>
+          <div id="mensajeMotivo" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+          <button type="submit" class="btn btn-danger" id="btnConfirmarMotivo">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: confirmación de acciones que cambian el avance -->
+  <div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="tituloConfirmar" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloConfirmar">Confirmar acción</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="textoConfirmar" class="mb-0"></p>
+          <div id="mensajeConfirmar" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmarAccion">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: aviso informativo (por ejemplo, dejar vencer) -->
+  <div class="modal fade" id="modalAviso" tabindex="-1" aria-labelledby="tituloAviso" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloAviso">Aviso</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="textoAviso"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="../js/datos.js"></script>
@@ -49,7 +120,513 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina({ roles: ["prestador"] });
-    // Tu código aquí.
+    const esc = UI.escapar;
+
+    if (u) {
+      if (!u.prestador) {
+        document.getElementById("listaBandeja").innerHTML = `
+          <div class="tarjeta estado-vacio">
+            <i class="bi bi-person-x" aria-hidden="true"></i>
+            <p class="mb-2">Tu cuenta tiene el rol de prestador, pero todavía no tiene un perfil de prestador asociado.</p>
+            <a class="btn btn-outline-primary btn-sm" href="../index.html">Volver al inicio</a>
+          </div>`;
+      } else {
+        iniciarBandeja();
+      }
+    }
+
+    function iniciarBandeja() {
+      const verif = u.prestador.verificacion.estado;
+      if (verif !== "Verificado") {
+        document.getElementById("avisoPerfil").innerHTML = `
+          <div class="alert alert-warning d-flex gap-2 align-items-start mt-3" role="status">
+            <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+            <div>
+              <strong>Tu perfil está ${verif === "Rechazado" ? "rechazado" : "pendiente de verificación"}.</strong>
+              ${verif === "Rechazado"
+                ? "No aparecerás en las búsquedas. Revisa con administración qué debes corregir."
+                : "Puedes atender las solicitudes que ya recibiste, pero no aparecerás en las búsquedas hasta que administración verifique tu perfil."}
+            </div>
+          </div>`;
+      }
+
+      document.getElementById("buscar").addEventListener("input", pintarBandeja);
+      document.querySelectorAll('input[name="filtro"]').forEach(r => r.addEventListener("change", pintarBandeja));
+      document.getElementById("btnActualizar").addEventListener("click", () => {
+        OY.revisarVencimientos();
+        pintarBandeja();
+        UI.alerta("mensaje", "info", "Bandeja actualizada.");
+      });
+
+      document.getElementById("listaBandeja").addEventListener("click", manejarAccion);
+      document.addEventListener("click", e => {
+        if (e.target.closest("[data-limpiar]")) {
+          document.getElementById("buscar").value = "";
+          document.getElementById("fTodas").checked = true;
+          pintarBandeja();
+        }
+      });
+
+      prepararModales();
+      pintarBandeja();
+      setInterval(revisarCambios, 30000);
+    }
+
+    /* ---------------- Datos y agrupación ---------------- */
+
+    function grupoDe(s) {
+      if (s.estado === "Solicitada") return "nuevas";
+      if (["En evaluación", "Pendiente de aprobación", "Confirmada", "En ejecución"].includes(s.estado)) return "encurso";
+      return "cerradas";
+    }
+
+    function filtroActual() {
+      const r = document.querySelector('input[name="filtro"]:checked');
+      return r ? r.value : "todas";
+    }
+
+    function firmaEstados() {
+      return OY.solicitudesDelUsuario().map(s => s.id + ":" + s.estado).join("|");
+    }
+
+    function minutosRestantes(fechaLimite) {
+      if (!fechaLimite) return null;
+      const ms = new Date(fechaLimite) - new Date();
+      return isNaN(ms) ? null : Math.floor(ms / 60000);
+    }
+
+    function textoPlazo(s) {
+      if (!["Solicitada", "Pendiente de aprobación"].includes(s.estado)) return "";
+      const min = minutosRestantes(s.fechaLimite);
+      if (min === null) return "";
+      if (min <= 0) return "Plazo agotado";
+      if (min < 60) return `Vence en ${min} min`;
+      if (min < 1440) return `Vence en ${Math.floor(min / 60)} h ${min % 60} min`;
+      return `Vence en ${Math.floor(min / 1440)} d ${Math.floor((min % 1440) / 60)} h`;
+    }
+
+    function clasePlazo(s) {
+      const min = minutosRestantes(s.fechaLimite);
+      if (min === null) return "texto-suave";
+      return min <= 60 ? "text-danger fw-semibold" : "texto-suave";
+    }
+
+    function fechaCorta(fecha) {
+      if (!fecha) return "—";
+      const p = String(fecha).split("-");
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(fecha);
+    }
+
+    function horarioDe(s) {
+      if (!s.horario) return "Por coordinar";
+      if (s.horario.tipo === "Inmediata") return "Atención inmediata (ahora)";
+      return `${fechaCorta(s.horario.fecha)} · ${s.horario.franja || "franja por coordinar"}`;
+    }
+
+    function direccionDe(s) {
+      if (["Confirmada", "En ejecución", "Finalizada"].includes(s.estado)) {
+        return s.direccionReferencia
+          ? esc(s.direccionReferencia)
+          : '<span class="texto-suave">El cliente no agregó una referencia.</span>';
+      }
+      return '<span class="texto-suave"><i class="bi bi-lock" aria-hidden="true"></i> Se comparte al confirmar el servicio.</span>';
+    }
+
+    function resumenCotizacion(s) {
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      if (!cot) return "";
+      const t = OY.totalesCotizacion(cot);
+      return `
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border rounded p-2 mt-2 small">
+          <span><i class="bi bi-receipt" aria-hidden="true"></i> Cotización ${esc(cot.id)} · ${esc(cot.tipoPrecio)}
+            <span class="badge text-bg-light border ms-1">${esc(cot.estado)}</span></span>
+          <strong>${OY.formatoQ(t.total)}</strong>
+        </div>`;
+    }
+
+    /* ---------------- Pintado ---------------- */
+
+    function pintarBandeja() {
+      const lista = OY.solicitudesDelUsuario();
+      const filtro = filtroActual();
+      const termino = document.getElementById("buscar").value.trim().toLowerCase();
+
+      const coincide = s => !termino || [
+        s.id, s.descripcion, OY.nombreOficio(s.oficioId), OY.nombreCompleto(s.clienteId), OY.nombreZona(s.zonaId)
+      ].join(" ").toLowerCase().includes(termino);
+
+      const visibles = lista.filter(s => coincide(s) && (filtro === "todas" || grupoDe(s) === filtro));
+
+      const nuevas = lista.filter(s => grupoDe(s) === "nuevas").length;
+      const enCurso = lista.filter(s => grupoDe(s) === "encurso").length;
+      const cerradas = lista.filter(s => grupoDe(s) === "cerradas").length;
+      const porVencer = lista.filter(s => {
+        if (s.estado !== "Solicitada") return false;
+        const min = minutosRestantes(s.fechaLimite);
+        return min !== null && min > 0 && min <= 120;
+      }).length;
+
+      document.getElementById("resumenBandeja").textContent =
+        `${lista.length} ${lista.length === 1 ? "solicitud asignada" : "solicitudes asignadas"} · ${nuevas} por responder · ${enCurso} en curso.`;
+
+      document.getElementById("contadores").innerHTML = [
+        { titulo: "Nuevas por responder", valor: nuevas, formula: "Estado Solicitada", icono: "bi-inbox", clase: nuevas ? "text-warning" : "" },
+        { titulo: "En curso", valor: enCurso, formula: "En evaluación a En ejecución", icono: "bi-arrow-repeat", clase: "" },
+        { titulo: "Cerradas", valor: cerradas, formula: "Finalizada, Rechazada, Vencida o Cancelada", icono: "bi-check2-all", clase: "" },
+        { titulo: "Por vencer (2 h)", valor: porVencer, formula: "Solicitadas con menos de 2 horas de plazo", icono: "bi-alarm", clase: porVencer ? "text-danger" : "" }
+      ].map(c => `
+        <div class="col-6 col-lg-3">
+          <div class="tarjeta indicador h-100">
+            <div class="small texto-suave"><i class="bi ${c.icono}" aria-hidden="true"></i> ${c.titulo}</div>
+            <div class="valor my-1 ${c.clase}">${c.valor}</div>
+            <div class="formula">${c.formula}</div>
+          </div>
+        </div>`).join("");
+
+      const cont = document.getElementById("listaBandeja");
+
+      if (!visibles.length) {
+        cont.innerHTML = lista.length
+          ? `<div class="tarjeta estado-vacio">
+               <i class="bi bi-funnel" aria-hidden="true"></i>
+               <p class="mb-2">No hay solicitudes que coincidan con tu búsqueda o filtro.</p>
+               <button class="btn btn-outline-primary btn-sm" type="button" data-limpiar>Limpiar filtros</button>
+             </div>`
+          : `<div class="tarjeta estado-vacio">
+               <i class="bi bi-inbox" aria-hidden="true"></i>
+               <p class="mb-1 fw-semibold">Todavía no tienes solicitudes.</p>
+               <p class="small mb-0">Cuando un cliente te elija desde la búsqueda, la solicitud aparecerá aquí.</p>
+             </div>`;
+        return;
+      }
+
+      if (filtro === "todas") {
+        const secciones = [
+          { id: "nuevas", titulo: "Nuevas por responder", icono: "bi-inbox" },
+          { id: "encurso", titulo: "En curso", icono: "bi-arrow-repeat" },
+          { id: "cerradas", titulo: "Cerradas", icono: "bi-check2-all" }
+        ];
+        cont.innerHTML = secciones.map(sec => {
+          const items = visibles.filter(s => grupoDe(s) === sec.id);
+          if (!items.length) return "";
+          return `
+            <section class="mb-4" aria-labelledby="titulo-${sec.id}">
+              <h2 class="h6 fw-bold d-flex align-items-center gap-2" id="titulo-${sec.id}">
+                <i class="bi ${sec.icono}" aria-hidden="true"></i> ${sec.titulo}
+                <span class="badge text-bg-light border">${items.length}</span>
+              </h2>
+              <div class="d-grid gap-3">${items.map(tarjetaSolicitud).join("")}</div>
+            </section>`;
+        }).join("");
+      } else {
+        const titulos = { nuevas: "Nuevas por responder", encurso: "En curso", cerradas: "Cerradas" };
+        cont.innerHTML = `
+          <section aria-labelledby="titulo-filtro">
+            <h2 class="h6 fw-bold" id="titulo-filtro">${titulos[filtro] || "Solicitudes"}
+              <span class="badge text-bg-light border">${visibles.length}</span></h2>
+            <div class="d-grid gap-3">${visibles.map(tarjetaSolicitud).join("")}</div>
+          </section>`;
+      }
+
+      actualizarTiempos();
+    }
+
+    function tarjetaSolicitud(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const icono = oficio ? oficio.icono : "bi-tools";
+      const cliente = OY.nombreCompleto(s.clienteId);
+      const acts = OY.accionesPermitidas(s.id);
+      const cal = OY.listar("calificaciones", c => c.solicitudId === s.id)[0] || null;
+      const historial = OY.historialDe(s.id);
+      const ultimo = historial.length ? historial[historial.length - 1] : null;
+      const plazo = textoPlazo(s);
+
+      let contexto = "";
+      if (s.estado === "En evaluación") {
+        contexto = `<div class="alert alert-info small py-2 mb-2 mt-2">
+          <i class="bi bi-info-circle" aria-hidden="true"></i> Aceptaste esta solicitud. Prepara la cotización para que el cliente pueda aprobarla.
+        </div>`;
+      } else if (s.estado === "Pendiente de aprobación") {
+        contexto = `<div class="alert alert-warning small py-2 mb-2 mt-2">
+          <i class="bi bi-hourglass-split" aria-hidden="true"></i> Esperando que el cliente apruebe la cotización.
+        </div>`;
+      } else if (s.estado === "Confirmada") {
+        contexto = `<div class="alert alert-primary small py-2 mb-2 mt-2">
+          <i class="bi bi-geo-alt" aria-hidden="true"></i> Servicio confirmado. La dirección exacta ya está visible; inicia el trabajo cuando llegues.
+        </div>`;
+      } else if (s.estado === "En ejecución") {
+        contexto = `<div class="alert alert-info small py-2 mb-2 mt-2">
+          <i class="bi bi-tools" aria-hidden="true"></i> Servicio en ejecución. Al terminar, márcalo como <strong>Finalizada</strong> para que el cliente pueda calificarte.
+        </div>`;
+      } else if (s.estado === "Finalizada") {
+        contexto = cal
+          ? `<div class="border rounded p-2 mt-2 small">
+               <div class="d-flex flex-wrap justify-content-between gap-2">
+                 <span class="fw-semibold">Calificación del cliente</span>
+                 <span>${UI.estrellas(cal.puntuacion)} <span class="texto-suave">${cal.puntuacion}/5</span></span>
+               </div>
+               ${cal.comentario ? `<p class="mb-0 mt-1">“${esc(cal.comentario)}”</p>` : '<p class="texto-suave mb-0 mt-1">Sin comentario.</p>'}
+             </div>`
+          : `<div class="alert alert-success small py-2 mb-2 mt-2">
+               <i class="bi bi-check-all" aria-hidden="true"></i> Servicio finalizado. El cliente todavía no lo ha calificado.
+             </div>`;
+      } else if (["Rechazada", "Cancelada", "Vencida"].includes(s.estado)) {
+        contexto = `<div class="alert alert-secondary small py-2 mb-2 mt-2">
+          <i class="bi bi-info-circle" aria-hidden="true"></i> ${esc(s.estado)}${ultimo && ultimo.motivo ? `: ${esc(ultimo.motivo)}` : "."}
+        </div>`;
+      }
+
+      return `
+        <article class="tarjeta">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div class="pe-2">
+              <h3 class="h6 fw-bold mb-1">
+                <i class="bi ${esc(icono)}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))}
+                <span class="texto-suave fw-normal">· ${esc(s.id)}</span>
+              </h3>
+              <div class="small texto-suave">
+                <span><i class="bi bi-person" aria-hidden="true"></i> ${esc(cliente)}</span>
+                <span class="mx-1" aria-hidden="true">·</span>
+                <span><i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}</span>
+                <span class="mx-1" aria-hidden="true">·</span>
+                <span>${esc(s.modalidad)}</span>
+              </div>
+            </div>
+            <div class="text-end">
+              ${UI.badgeEstado(s.estado)}
+              ${plazo ? `<div class="small mt-1 ${clasePlazo(s)}" data-limite="${esc(s.fechaLimite)}" data-estado="${esc(s.estado)}">${esc(plazo)}</div>` : ""}
+            </div>
+          </div>
+
+          <p class="mt-2 mb-2 text-break">${esc(s.descripcion)}</p>
+
+          <div class="row g-2 small">
+            <div class="col-md-6"><strong>Horario:</strong> ${esc(horarioDe(s))}</div>
+            <div class="col-md-6"><strong>Dirección:</strong> ${direccionDe(s)}</div>
+            <div class="col-md-6"><strong>Solicitada:</strong> ${esc(OY.formatoFecha(s.fechaCreacion))}</div>
+            <div class="col-md-6"><strong>Especialidad:</strong> ${s.especialidadId ? esc(OY.nombreEspecialidad(s.especialidadId)) : "No especificada"}</div>
+          </div>
+
+          ${resumenCotizacion(s)}
+          ${contexto}
+          ${accionesDe(s, acts)}
+        </article>`;
+    }
+
+    function accionesDe(s, acts) {
+      const botones = [];
+      const detalle = `<a class="btn btn-sm btn-outline-secondary" href="../cliente/seguimiento.html?solicitud=${encodeURIComponent(s.id)}">
+        <i class="bi bi-eye" aria-hidden="true"></i> Ver detalle
+      </a>`;
+      const rechazar = `<button class="btn btn-sm btn-outline-danger" type="button" data-accion="rechazar" data-id="${esc(s.id)}">
+        <i class="bi bi-x-circle" aria-hidden="true"></i> Rechazar</button>`;
+
+      if (s.estado === "Solicitada") {
+        if (acts.includes("En evaluación")) {
+          botones.push(`<button class="btn btn-sm btn-primary" type="button" data-accion="aceptar" data-id="${esc(s.id)}">
+            <i class="bi bi-check2" aria-hidden="true"></i> Aceptar</button>`);
+        }
+        if (acts.includes("Rechazada")) botones.push(rechazar);
+        botones.push(`<button class="btn btn-sm btn-outline-secondary" type="button" data-accion="dejar-vencer" data-id="${esc(s.id)}">
+          <i class="bi bi-clock-history" aria-hidden="true"></i> Dejar vencer</button>`);
+      }
+
+      if (s.estado === "En evaluación") {
+        botones.push(`<a class="btn btn-sm btn-acento" href="cotizacion.html?solicitud=${encodeURIComponent(s.id)}">
+          <i class="bi bi-receipt" aria-hidden="true"></i> Preparar cotización</a>`);
+        if (acts.includes("Rechazada")) botones.push(rechazar);
+      }
+
+      if (s.estado === "Confirmada") {
+        if (acts.includes("En ejecución")) {
+          botones.push(`<button class="btn btn-sm btn-primary" type="button" data-accion="iniciar" data-id="${esc(s.id)}">
+            <i class="bi bi-play-fill" aria-hidden="true"></i> Iniciar servicio</button>`);
+        }
+        if (acts.includes("Cancelada")) {
+          botones.push(`<button class="btn btn-sm btn-outline-danger" type="button" data-accion="cancelar" data-id="${esc(s.id)}">
+            <i class="bi bi-slash-circle" aria-hidden="true"></i> Cancelar</button>`);
+        }
+      }
+
+      if (s.estado === "En ejecución" && acts.includes("Finalizada")) {
+        botones.push(`<button class="btn btn-sm btn-primary" type="button" data-accion="finalizar" data-id="${esc(s.id)}">
+          <i class="bi bi-check-all" aria-hidden="true"></i> Marcar como finalizada</button>`);
+      }
+
+      if (s.estado !== "Solicitada") {
+        botones.push(`<a class="btn btn-sm btn-outline-secondary" href="../cliente/reclamo.html?solicitud=${encodeURIComponent(s.id)}">
+          <i class="bi bi-life-preserver" aria-hidden="true"></i> Presentar reclamo</a>`);
+      }
+
+      botones.push(detalle);
+      return `<div class="d-flex flex-wrap gap-2 mt-3">${botones.join("")}</div>`;
+    }
+
+    /* ---------------- Acciones ---------------- */
+
+    let motivoPendiente = null;
+    let accionPendiente = null;
+
+    function manejarAccion(e) {
+      const boton = e.target.closest("[data-accion]");
+      if (!boton) return;
+      const id = boton.dataset.id;
+      const accion = boton.dataset.accion;
+      const s = OY.obtener("solicitudes", id);
+      if (!s) return;
+
+      if (accion === "aceptar") {
+        abrirConfirmacion(
+          "Aceptar solicitud",
+          `Al aceptar ${esc(s.id)}, la solicitud pasará a <strong>En evaluación</strong> y el cliente sabrá que la estás atendiendo. Después deberás enviar una cotización.`,
+          "Aceptar solicitud",
+          "btn-primary",
+          () => OY.cambiarEstado(id, "En evaluación"),
+          "Solicitud aceptada. Prepara la cotización para el cliente."
+        );
+      } else if (accion === "rechazar") {
+        abrirMotivo(id, "Rechazada", "Rechazar solicitud",
+          "Explica brevemente por qué no puedes atender esta solicitud. El cliente verá el motivo en el historial.",
+          "Rechazar solicitud");
+      } else if (accion === "cancelar") {
+        abrirMotivo(id, "Cancelada", "Cancelar servicio confirmado",
+          "El servicio ya estaba confirmado. Indica el motivo de la cancelación; quedará registrado en el historial y el cliente lo verá.",
+          "Cancelar servicio");
+      } else if (accion === "iniciar") {
+        abrirConfirmacion(
+          "Iniciar servicio",
+          `La solicitud ${esc(s.id)} pasará a <strong>En ejecución</strong>. Marca el avance solo cuando ya estés atendiendo el trabajo.`,
+          "Iniciar servicio",
+          "btn-primary",
+          () => OY.cambiarEstado(id, "En ejecución"),
+          "Servicio iniciado. Cuando termines, márcalo como Finalizada."
+        );
+      } else if (accion === "finalizar") {
+        abrirConfirmacion(
+          "Finalizar servicio",
+          `Al marcar ${esc(s.id)} como <strong>Finalizada</strong>, el cliente podrá calificarte. Asegúrate de haber completado el trabajo y de haber acordado el pago con el cliente.`,
+          "Marcar como finalizada",
+          "btn-primary",
+          () => OY.cambiarEstado(id, "Finalizada"),
+          "Servicio finalizado. El cliente ya puede calificarte."
+        );
+      } else if (accion === "dejar-vencer") {
+        abrirAviso(
+          "Dejar vencer la solicitud",
+          `<p>Si no respondes, el sistema marcará <strong>${esc(s.id)}</strong> como <strong>Vencida</strong> automáticamente al cumplirse el plazo.</p>
+           <p class="mb-0">Plazo: <strong>${esc(OY.formatoFecha(s.fechaLimite))}</strong>. No necesitas hacer nada; si cambias de opinión, todavía puedes aceptarla o rechazarla antes de esa hora.</p>`
+        );
+      }
+    }
+
+    function prepararModales() {
+      document.getElementById("motivoTexto").addEventListener("input", function () {
+        this.classList.remove("is-invalid");
+        document.getElementById("mensajeMotivo").innerHTML = "";
+      });
+
+      document.getElementById("formMotivo").addEventListener("submit", e => {
+        e.preventDefault();
+        if (!motivoPendiente) return;
+        const campo = document.getElementById("motivoTexto");
+        const motivo = campo.value.trim();
+        if (motivo.length < 5) {
+          campo.classList.add("is-invalid");
+          campo.focus();
+          return;
+        }
+        const boton = document.getElementById("btnConfirmarMotivo");
+        UI.bloquearBoton(boton, "Guardando…");
+        const r = OY.cambiarEstado(motivoPendiente.id, motivoPendiente.estado, motivo);
+        if (!r.ok) {
+          UI.liberarBoton(boton);
+          UI.alerta("mensajeMotivo", "danger", r.error);
+          return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById("modalMotivo")).hide();
+        UI.alerta("mensaje", "success",
+          motivoPendiente.estado === "Rechazada" ? "Solicitud rechazada. El cliente verá el motivo." : "Servicio cancelado. El motivo quedó registrado.");
+        motivoPendiente = null;
+        pintarBandeja();
+      });
+
+      document.getElementById("btnConfirmarAccion").addEventListener("click", () => {
+        if (!accionPendiente) return;
+        const boton = document.getElementById("btnConfirmarAccion");
+        UI.bloquearBoton(boton, "Procesando…");
+        const r = accionPendiente.fn();
+        if (!r.ok) {
+          UI.liberarBoton(boton);
+          UI.alerta("mensajeConfirmar", "danger", r.error);
+          return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById("modalConfirmar")).hide();
+        UI.alerta("mensaje", "success", accionPendiente.ok);
+        accionPendiente = null;
+        pintarBandeja();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    function abrirMotivo(id, estado, titulo, texto, botonTexto) {
+      motivoPendiente = { id, estado };
+      document.getElementById("tituloMotivo").textContent = titulo;
+      document.getElementById("textoMotivo").textContent = texto;
+      document.getElementById("motivoTexto").value = "";
+      document.getElementById("motivoTexto").classList.remove("is-invalid");
+      document.getElementById("mensajeMotivo").innerHTML = "";
+      const boton = document.getElementById("btnConfirmarMotivo");
+      boton.textContent = botonTexto;
+      boton.disabled = false;
+      delete boton.dataset.textoOriginal;
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("modalMotivo"));
+      document.getElementById("modalMotivo").addEventListener("shown.bs.modal", () => {
+        document.getElementById("motivoTexto").focus();
+      }, { once: true });
+      modal.show();
+    }
+
+    function abrirConfirmacion(titulo, html, botonTexto, clase, fn, ok) {
+      accionPendiente = { fn, ok };
+      document.getElementById("tituloConfirmar").textContent = titulo;
+      document.getElementById("textoConfirmar").innerHTML = html;
+      document.getElementById("mensajeConfirmar").innerHTML = "";
+      const boton = document.getElementById("btnConfirmarAccion");
+      boton.className = "btn " + clase;
+      boton.textContent = botonTexto;
+      boton.disabled = false;
+      delete boton.dataset.textoOriginal;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("modalConfirmar")).show();
+    }
+
+    function abrirAviso(titulo, html) {
+      document.getElementById("tituloAviso").textContent = titulo;
+      document.getElementById("textoAviso").innerHTML = html;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("modalAviso")).show();
+    }
+
+    /* ---------------- Actualización automática ---------------- */
+
+    function actualizarTiempos() {
+      document.querySelectorAll("[data-limite]").forEach(el => {
+        const s = { fechaLimite: el.dataset.limite, estado: el.dataset.estado };
+        const texto = textoPlazo(s);
+        if (!texto) return;
+        el.textContent = texto;
+        el.className = "small mt-1 " + clasePlazo(s);
+      });
+    }
+
+    function revisarCambios() {
+      actualizarTiempos();
+      const antes = firmaEstados();
+      OY.revisarVencimientos();
+      if (firmaEstados() !== antes) {
+        pintarBandeja();
+        UI.alerta("mensaje", "warning", "Una solicitud cambió a Vencida porque se agotó el plazo de respuesta.");
+      }
+    }
   </script>
 </body>
 </html>

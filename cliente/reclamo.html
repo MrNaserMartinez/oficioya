@@ -12,31 +12,16 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb small mt-3 mb-0" id="migas">
+        <li class="breadcrumb-item"><a href="historial.html">Mis solicitudes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Presentar reclamo</li>
+      </ol>
+    </nav>
+
     <h1 class="titulo-pagina h3">Presentar reclamo</h1>
     <div id="mensaje"></div>
-
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): RF11
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · RF11</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?solicitud=</li>
-        <li>Motivo (Cobro, Calidad, Puntualidad, Conducta, Otro), descripción y evidencia (nombres de archivo, SIMULADO)</li>
-        <li>Guardar con OY.crearReclamo; se ve en el panel de Soporte</li>
-        <li>Explicar los siguientes pasos y plazos de respuesta</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.crearReclamo(id, motivo, descripcion, evidencia)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Crear un reclamo y verlo entrando como soporte@demo.com.</p>
-    </section>
+    <div id="contenido"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -44,8 +29,300 @@
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
-    const u = UI.iniciarPagina({ roles: ["cliente","prestador"] });
-    // Tu código aquí.
+    const u = UI.iniciarPagina({ roles: ["cliente", "prestador"] });
+    const esc = UI.escapar;
+
+    if (u) iniciarReclamo();
+
+    function iniciarReclamo() {
+      const id = new URLSearchParams(window.location.search).get("solicitud");
+      const volver = u.rol === "cliente" ? "historial.html" : "prestador/bandeja.html";
+
+      if (u.rol === "prestador") {
+        document.getElementById("migas").innerHTML = `
+          <li class="breadcrumb-item"><a href="../prestador/bandeja.html">Mi bandeja</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Presentar reclamo</li>`;
+      }
+
+      if (!id) {
+        mostrarError("Falta indicar la solicitud",
+          "Abre esta pantalla desde el detalle de una solicitud. Si eres cliente, entra a <strong>Mis solicitudes</strong>; si eres prestador, a <strong>Mi bandeja</strong>.",
+          volver);
+        return;
+      }
+
+      const s = OY.obtener("solicitudes", id);
+      const participa = s && (u.rol === "cliente"
+        ? s.clienteId === u.cuenta.id
+        : (u.prestador && s.prestadorId === u.prestador.id));
+
+      if (!s || !participa) {
+        mostrarError("Solicitud no encontrada",
+          "No encontramos esa solicitud en tu cuenta. Revisa tus solicitudes e inténtalo de nuevo.",
+          volver);
+        return;
+      }
+
+      const seguimiento = u.rol === "cliente"
+        ? `seguimiento.html?solicitud=${encodeURIComponent(s.id)}`
+        : `../cliente/seguimiento.html?solicitud=${encodeURIComponent(s.id)}`;
+
+      const existentes = OY.listar("reclamos", r => r.solicitudId === s.id)
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+      document.getElementById("contenido").innerHTML =
+        tarjetaResumen(s, seguimiento) +
+        `<div id="reclamosExistentes">${htmlReclamosExistentes(existentes)}</div>` +
+        cuerpoFormulario(s, existentes) +
+        pasosSiguientes();
+
+      prepararFormulario(s.id);
+    }
+
+    function mostrarError(titulo, texto, volver) {
+      document.getElementById("contenido").innerHTML = `
+        <div class="tarjeta estado-vacio">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          <h2 class="h5 fw-bold">${esc(titulo)}</h2>
+          <p class="small mb-3">${texto}</p>
+          <a class="btn btn-primary btn-sm" href="${volver}">Volver</a>
+        </div>`;
+    }
+
+    function tarjetaResumen(s, seguimiento) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const icono = oficio ? oficio.icono : "bi-tools";
+      const contraparte = u.rol === "cliente"
+        ? `Prestador: <strong>${esc(OY.nombrePrestador(s.prestadorId))}</strong>`
+        : `Cliente: <strong>${esc(OY.nombreCompleto(s.clienteId))}</strong>`;
+      const mostrarDireccion = u.rol === "cliente" || ["Confirmada", "En ejecución", "Finalizada"].includes(s.estado);
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      const total = cot ? OY.totalesCotizacion(cot).total : null;
+
+      return `
+        <section class="tarjeta mb-3" aria-label="Datos de la solicitud">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h5 fw-bold mb-1">
+                <i class="bi ${esc(icono)}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))}
+                <span class="texto-suave fw-normal fs-6">· ${esc(s.id)}</span>
+              </h2>
+              <p class="small texto-suave mb-0">
+                ${contraparte}
+                <span class="mx-1" aria-hidden="true">·</span>
+                <i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}
+              </p>
+            </div>
+            <div>${UI.badgeEstado(s.estado)}</div>
+          </div>
+          <p class="mt-2 mb-2 text-break">${esc(s.descripcion)}</p>
+          <div class="row g-2 small">
+            <div class="col-md-4"><strong>Solicitada:</strong> ${esc(OY.formatoFecha(s.fechaCreacion))}</div>
+            <div class="col-md-4"><strong>Total cotizado:</strong> ${total === null ? "Sin cotización" : OY.formatoQ(total)}</div>
+            <div class="col-md-4"><strong>Dirección:</strong>
+              ${mostrarDireccion
+                ? esc(s.direccionReferencia || "Sin referencia")
+                : '<span class="texto-suave">Se comparte al confirmar el servicio.</span>'}
+            </div>
+          </div>
+          <div class="mt-2">
+            <a class="btn btn-sm btn-outline-primary" href="${seguimiento}">
+              <i class="bi bi-activity" aria-hidden="true"></i> Ver seguimiento y chat
+            </a>
+          </div>
+        </section>`;
+    }
+
+    function badgeReclamo(estado) {
+      const clase = { "Abierto": "text-bg-danger", "En revisión": "text-bg-warning", "Resuelto": "text-bg-success" }[estado] || "text-bg-secondary";
+      return `<span class="badge ${clase}">${esc(estado)}</span>`;
+    }
+
+    function htmlReclamosExistentes(lista) {
+      if (!lista.length) return "";
+      const abiertos = lista.filter(r => r.estado !== "Resuelto").length;
+      return `
+        <section class="mb-3" aria-labelledby="tituloExistentes">
+          <h2 class="h6 fw-bold" id="tituloExistentes">Reclamos de esta solicitud
+            <span class="badge text-bg-light border">${lista.length}</span></h2>
+          ${abiertos ? `<div class="alert alert-warning small py-2">
+            <i class="bi bi-info-circle" aria-hidden="true"></i> Ya hay ${abiertos === 1 ? "un reclamo abierto" : abiertos + " reclamos abiertos"} para esta solicitud. Puedes registrar otro si se trata de un problema distinto.
+          </div>` : ""}
+          <div class="d-grid gap-2">
+            ${lista.map(r => `
+              <article class="tarjeta">
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                  <h3 class="h6 fw-bold mb-0">${esc(r.id)} · ${esc(r.motivo)}</h3>
+                  ${badgeReclamo(r.estado)}
+                </div>
+                <p class="small mb-1 mt-2 text-break">${esc(r.descripcion)}</p>
+                <p class="small texto-suave mb-0">Presentado el ${esc(OY.formatoFecha(r.fecha))}
+                  ${r.evidencia && r.evidencia.length ? ` · Evidencia: ${esc(r.evidencia.join(", "))}` : ""}
+                </p>
+                ${r.resolucion ? `<div class="alert alert-success small py-2 mt-2 mb-0"><strong>Resolución:</strong> ${esc(r.resolucion)}</div>` : ""}
+              </article>`).join("")}
+          </div>
+        </section>`;
+    }
+
+    function cuerpoFormulario(s, existentes) {
+      if (s.estado === "Solicitada") {
+        return `
+          <section class="tarjeta" aria-labelledby="tituloSinServicio">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-info-circle text-primary fs-4" aria-hidden="true"></i>
+              <div>
+                <h2 class="h5 fw-bold mb-1" id="tituloSinServicio">Aún no hay un servicio contratado</h2>
+                <p class="mb-2">Esta solicitud todavía está en estado ${UI.badgeEstado(s.estado)}. Los reclamos se usan cuando ya hay un servicio en curso o finalizado.</p>
+                <p class="texto-suave small mb-3">Si ya no necesitas el servicio, ${u.rol === "cliente" ? "puedes cancelar la solicitud desde el seguimiento." : "puedes rechazarla desde tu bandeja."}</p>
+                <a class="btn btn-primary btn-sm" href="${u.rol === "cliente" ? `seguimiento.html?solicitud=${encodeURIComponent(s.id)}` : "../prestador/bandeja.html"}">
+                  ${u.rol === "cliente" ? "Ir al seguimiento" : "Ir a mi bandeja"}
+                </a>
+              </div>
+            </div>
+          </section>`;
+      }
+
+      return `
+        <form class="tarjeta" id="formReclamo" novalidate aria-labelledby="tituloFormulario">
+          <h2 class="h5 fw-bold" id="tituloFormulario">Cuéntanos qué pasó</h2>
+          <p class="texto-suave small">Sé claro y concreto. Soporte verá este reclamo junto con el historial de la solicitud.</p>
+
+          <div class="mb-3">
+            <label for="motivo" class="form-label">Motivo <span class="text-danger" aria-hidden="true">*</span></label>
+            <select class="form-select" id="motivo" required aria-describedby="ayudaMotivo">
+              <option value="">Selecciona un motivo</option>
+              <option value="Cobro">Cobro</option>
+              <option value="Calidad">Calidad del trabajo</option>
+              <option value="Puntualidad">Puntualidad</option>
+              <option value="Conducta">Conducta</option>
+              <option value="Otro">Otro</option>
+            </select>
+            <div class="invalid-feedback" id="errorMotivo">Elige un motivo para el reclamo.</div>
+            <div class="form-text" id="ayudaMotivo">Si eliges «Otro», explica el motivo en la descripción.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="descripcion" class="form-label">Descripción del problema <span class="text-danger" aria-hidden="true">*</span></label>
+            <textarea class="form-control" id="descripcion" rows="4" maxlength="800" required
+              aria-describedby="ayudaDescripcion" placeholder="Ej. Se acordó un precio y al terminar se cobró un monto distinto."></textarea>
+            <div class="invalid-feedback" id="errorDescripcion">Describe el problema con al menos 10 caracteres.</div>
+            <div class="form-text d-flex justify-content-between" id="ayudaDescripcion">
+              <span>Mínimo 10 caracteres. No incluyas contraseñas ni datos bancarios.</span>
+              <span><span id="numCaracteres">0</span>/800</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="evidencia" class="form-label">Evidencia (opcional)</label>
+            <input class="form-control" type="file" id="evidencia" multiple accept="image/*,.pdf" aria-describedby="ayudaEvidencia">
+            <div class="form-text" id="ayudaEvidencia">
+              ${UI.etiquetaSimulado("evidencia")} En el prototipo solo se guardan los nombres de los archivos; no se sube ni se muestra el contenido.
+            </div>
+            <div id="archivosElegidos" class="small mt-1" aria-live="polite"></div>
+          </div>
+
+          ${existentes.some(r => r.estado !== "Resuelto") ? `
+            <div class="alert alert-warning small py-2">
+              <i class="bi bi-exclamation-circle" aria-hidden="true"></i> Ya existe un reclamo sin resolver. Si es el mismo problema, espera la respuesta de Soporte; si es otro, puedes enviar este.
+            </div>` : ""}
+
+          <div id="mensajeFormulario"></div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-acento" id="btnEnviarReclamo">
+              <i class="bi bi-send" aria-hidden="true"></i> Enviar reclamo
+            </button>
+            <a class="btn btn-outline-secondary" href="${u.rol === "cliente" ? "historial.html" : "../prestador/bandeja.html"}">Cancelar</a>
+          </div>
+        </form>`;
+    }
+
+    function pasosSiguientes() {
+      return `
+        <section class="tarjeta mt-3" aria-labelledby="tituloPasos">
+          <h2 class="h6 fw-bold" id="tituloPasos">¿Qué pasa después?</h2>
+          <ol class="small mb-2">
+            <li>Tu reclamo queda en estado <strong>Abierto</strong> y aparece en el panel de Soporte.</li>
+            <li>Soporte lo toma <strong>En revisión</strong> y puede pedirte más información por el chat de la solicitud.</li>
+            <li>Cuando se resuelva, verás la <strong>resolución</strong> en esta pantalla y en el historial del reclamo.</li>
+          </ol>
+          <p class="small texto-suave mb-0">
+            Compromiso propuesto en el diseño: revisión inicial en un máximo de 24 horas hábiles y respuesta en 48 horas hábiles.
+            En el prototipo estos plazos no se controlan automáticamente.
+          </p>
+        </section>`;
+    }
+
+    function prepararFormulario(solicitudId) {
+      const form = document.getElementById("formReclamo");
+      if (!form) return;
+
+      const motivo = document.getElementById("motivo");
+      const descripcion = document.getElementById("descripcion");
+      const evidencia = document.getElementById("evidencia");
+      const archivos = document.getElementById("archivosElegidos");
+      const contador = document.getElementById("numCaracteres");
+
+      descripcion.addEventListener("input", () => {
+        contador.textContent = descripcion.value.length;
+        descripcion.classList.remove("is-invalid");
+        document.getElementById("mensajeFormulario").innerHTML = "";
+      });
+
+      motivo.addEventListener("change", () => {
+        motivo.classList.remove("is-invalid");
+        document.getElementById("mensajeFormulario").innerHTML = "";
+      });
+
+      evidencia.addEventListener("change", () => {
+        const nombres = Array.from(evidencia.files || []).map(f => f.name);
+        archivos.innerHTML = nombres.length
+          ? `<span class="texto-suave">Archivos seleccionados (solo nombre):</span> ${nombres.map(n => `<span class="badge text-bg-light border">${esc(n)}</span>`).join(" ")}`
+          : "";
+      });
+
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        let valido = true;
+
+        if (!motivo.value) {
+          motivo.classList.add("is-invalid");
+          valido = false;
+        }
+        if (descripcion.value.trim().length < 10) {
+          descripcion.classList.add("is-invalid");
+          valido = false;
+        }
+        if (!valido) {
+          UI.alerta("mensajeFormulario", "warning", "Revisa los campos marcados: el motivo es obligatorio y la descripción necesita al menos 10 caracteres.");
+          (motivo.value ? descripcion : motivo).focus();
+          return;
+        }
+
+        const boton = document.getElementById("btnEnviarReclamo");
+        UI.bloquearBoton(boton, "Enviando…");
+        const nombres = Array.from(evidencia.files || []).map(f => f.name);
+        const r = OY.crearReclamo(solicitudId, motivo.value, descripcion.value, nombres);
+
+        if (!r.ok) {
+          UI.liberarBoton(boton);
+          UI.alerta("mensajeFormulario", "danger", r.error);
+          return;
+        }
+
+        UI.alerta("mensaje", "success", `Reclamo ${r.dato.id} registrado. Soporte lo revisará y responderá por el chat de la solicitud.`);
+        form.reset();
+        contador.textContent = "0";
+        archivos.innerHTML = "";
+        document.getElementById("mensajeFormulario").innerHTML = "";
+        const lista = OY.listar("reclamos", x => x.solicitudId === solicitudId)
+          .sort((a, b) => b.fecha.localeCompare(a.fecha));
+        document.getElementById("reclamosExistentes").innerHTML = htmlReclamosExistentes(lista);
+        document.getElementById("reclamosExistentes").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   </script>
 </body>
 </html>
