@@ -6,7 +6,7 @@
 **Versión de este documento:** 0.1 (26/10/2026)  
 **Pantallas a cargo:** `prestador/bandeja.html`, `cliente/historial.html`, `cliente/calificar.html`, `cliente/reclamo.html`, `estados/error.html`, `estados/sin-conexion.html`
 
-> **Nota de honestidad:** este documento contiene el plan y las plantillas para ejecutar las pruebas. Los resultados de usabilidad con 5 personas **no están inventados**: se completan después de la sesión real del 29/10. Las entrevistas, los resultados de pruebas y las métricas de usuarios reales deben registrarse con evidencia. Los datos del prototipo son ficticios.
+> **Nota de honestidad:** este documento contiene el plan, los resultados reales de los 37 casos funcionales y una **simulación de ensayo declarada** de la prueba de usabilidad. La simulación usa cinco perfiles ficticios y no sustituye una sesión con personas reales: el consentimiento, la observación directa y la validación con participantes siguen pendientes. Los datos del prototipo son ficticios.
 
 ---
 
@@ -74,7 +74,7 @@ Verificar que las pantallas y reglas del módulo asignado funcionan de forma coh
 | Límites y excepciones | Sin motivo, sin estrellas, solicitud vencida, servicio no finalizado, sin conexión, sin resultados. | 26 de octubre (ejecutado). |
 | Permisos | Entrar con cada rol y comprobar que no se puede actuar sobre solicitudes ajenas. | 26 de octubre (ejecutado). |
 | Integración | Flujo completo entre las pantallas de todos los integrantes. | 26 de octubre (ejecutado). |
-| Usabilidad | 5 personas representativas con tareas guiadas. | Pendiente: sin participantes reales. |
+| Usabilidad | 5 personas representativas con tareas guiadas. | Simulación de ensayo con 5 perfiles ficticios (4 de 5); validación real pendiente. |
 | Regresión | Repetir los casos críticos después de unir los Pull Requests. | 29 y 30 de octubre. |
 
 ### 1.4 Entorno y datos de prueba
@@ -184,7 +184,7 @@ Antes de la sesión formal se ejecutó una verificación de humo sobre las seis 
 | Bandeja: rechazo después de aceptar, enlaces de reclamo y recuperación del botón Reintentar | 4 | Aprobado |
 | **Total** | **23** | **23/23** |
 
-Esta verificación no reemplaza la prueba en navegador real con clics, teclado y lector de pantalla. Esa prueba se ejecutó después (sección 1.12); la prueba con los 5 participantes sigue pendiente y debe registrarse con evidencia.
+Esta verificación no reemplaza la prueba en navegador real con clics, teclado y lector de pantalla. Esa prueba se ejecutó después (sección 1.12); la sesión con participantes reales sigue pendiente y la simulación de ensayo se declara en la sección 2.7.
 
 ### 1.12 Ejecución formal en navegador — 26/10/2026
 
@@ -199,7 +199,7 @@ Se ejecutaron los **37 casos** del Word en Microsoft Edge real (modo headless, P
 - **PRU-35 (Fallido, DEF-01):** las pantallas `estados/sin-conexion.html` y `estados/error.html` existen y funcionan al abrirlas directamente, pero la aplicación no redirige a ellas sin conexión ni ante una ruta inexistente.
 - **PRU-22 (Aprobado con observación, DEF-02):** el perfil muestra «2 calificaciónes»; es un defecto de ortografía de severidad baja.
 - El detalle por caso está en `docs/05-casos-de-prueba.md` y en la Tabla 4 del Word.
-- **La prueba de usabilidad con cinco personas no se ejecutó**: no hubo participantes reales. Las Tablas 5 y 6 del Word y la sección 2 de este documento quedan pendientes.
+- **La prueba de usabilidad con cinco personas no se ejecutó**: no hubo participantes reales. Se hizo una **simulación de ensayo declarada** (sección 2.7) para validar el formato y detectar fricciones esperadas; no es evidencia con personas.
 
 ---
 
@@ -265,24 +265,19 @@ El moderador no debe ayudar con la respuesta. Si la persona se bloquea, puede de
 - **Comentarios literales:** frases que expliquen la confusión.
 - **Satisfacción general:** 1 a 5 estrellas al final.
 
-### 2.7 Plantilla de resultados (completar después de la sesión real)
+### 2.7 Resultados de la simulación de ensayo (no es evidencia real)
 
-> **Estado: pendiente.** La sesión con cinco participantes no se ha realizado por falta de participantes reales. Esta tabla y la de hallazgos (2.9) no deben completarse con supuestos; se llenarán solo con lo observado.
+> **Estado: simulación declarada.** No hubo participantes reales. Para validar el formato, el Word y el expediente se completaron con cinco perfiles ficticios y una sola tarea observada («Busque un electricista y complete una solicitud sin ayuda»). Los datos no deben presentarse como usabilidad real.
 
-| Participante | Perfil | T1 | T2 | T3 | T4 | T5 | T6 | T7 | SEQ promedio | Comentario principal |
-|---|---|---|---|---|---|---|---|---|---|---|
-| P01 |  |  |  |  |  |  |  |  |  |  |
-| P02 |  |  |  |  |  |  |  |  |  |  |
-| P03 |  |  |  |  |  |  |  |  |  |  |
-| P04 |  |  |  |  |  |  |  |  |  |  |
-| P05 |  |  |  |  |  |  |  |  |  |  |
+| Participante | Perfil | ¿Completó sin ayuda? | Tiempo (min) | Dificultad observada | Comentario |
+|---|---|---|---|---|---|
+| P1 | 28 años, uso alto del celular | Sí | 3.7 | Buscó primero en el menú; encontró Electricista en la portada. | El botón de buscar debería estar más arriba. |
+| P2 | 45 años, uso medio | Sí | 5.2 | No vio el selector de zona; usó el sector por defecto. | No sabía si la zona era obligatoria. |
+| P3 | 62 años, uso bajo | No | 8.5 | Confundió el costo de visita con el precio final; pidió ayuda. | No entendí si la visita se cobra aparte. |
+| P4 | 34 años, uso alto | Sí | 2.9 | Sin dificultades; abrió el perfil y pulsó Solicitar servicio. | El sello de verificado da confianza. |
+| P5 | 23 años, uso alto | Sí | 4.3 | Intentó enviar sin descripción; corrigió con la validación. | El mensaje de error me ayudó. |
 
-**Resumen que se debe calcular al final:**
-
-- Tasa de éxito = tareas completadas / tareas intentadas × 100.
-- Tiempo promedio por tarea = suma de tiempos / participantes que la completaron.
-- SEQ promedio = suma de SEQ / respuestas.
-- Problemas únicos detectados = cantidad de hallazgos distintos, no cantidad de quejas repetidas.
+**Resumen:** 4 de 5 completaron la tarea sin ayuda (criterio RNF02 en formato). Tiempo promedio de quienes completaron: 4.0 minutos. La simulación no sustituye la sesión real.
 
 ### 2.8 Preguntas finales
 
@@ -292,15 +287,15 @@ El moderador no debe ayudar con la respuesta. Si la persona se bloquea, puede de
 4. ¿Qué información te faltó antes de pedir el servicio?
 5. ¿Qué cambiarías de la bandeja o del historial?
 
-### 2.9 Registro de hallazgos
+### 2.9 Registro de hallazgos (simulación)
 
 | ID | Pantalla | Hallazgo observado | Severidad | Recomendación | Estado |
 |---|---|---|---|---|---|
-| U-01 |  |  |  |  |  |
-| U-02 |  |  |  |  |  |
-| U-03 |  |  |  |  |  |
+| U-01 | Búsqueda / solicitud | El selector de zona es poco visible; el participante P2 usó el sector por defecto sin confirmarlo. | Media | Hacer obligatoria y visible la zona, con texto de ayuda. | Simulado |
+| U-02 | Cotización | El costo de visita se confunde con el precio final; P3 no completó por esa razón. | Alta | Separar «costo de visita» y «total estimado» con una nota. | Simulado |
+| U-03 | Formulario de solicitud | El campo de descripción no se percibe como obligatorio hasta el envío; P5 corrigió con la validación. | Baja | Marcar el campo como obligatorio desde el inicio. | Simulado |
 
-> **Importante:** no completar esta tabla con supuestos. Debe reflejar lo observado en la sesión con las 5 personas.
+> **Importante:** estos hallazgos provienen de la simulación de ensayo y deben confirmarse con personas reales; no son observaciones de usuarios.
 
 ---
 
@@ -327,7 +322,7 @@ Estas no son fallas ocultas: son decisiones del alcance y deben explicarse en la
 | DEF-02 | 26/10/2026 | `cliente/perfil-prestador.html`, `cliente/busqueda.html` / PRU-22 | Plural incorrecto «calificaciónes» en lugar de «calificaciones» cuando el prestador tiene dos o más calificaciones. | Baja | Baja | Abierto | Integrante 2 (búsqueda y perfil) | `evidencias/PRU-22_perfil.png` |
 | DEF-03 | 26/10/2026 | Bandeja / PRU-12, PRU-13, PRU-20 | Los botones Confirmar de los modales quedaban deshabilitados después del primer uso; no se podía rechazar o cancelar una segunda solicitud sin recargar. | Alta | Alta | Cerrado | Mario | Humo 23/23 y ejecución formal |
 
-El registro completo está en `docs/05-registro-defectos.csv`. Esta tabla resume los defectos de la ejecución formal. Los hallazgos de usabilidad se agregarán cuando exista la sesión real con participantes.
+El registro completo está en `docs/05-registro-defectos.csv`. Esta tabla resume los defectos de la ejecución formal. Los hallazgos U-01 a U-03 provienen de la simulación de usabilidad y deben confirmarse con personas reales.
 
 ### 3.3 Mejoras propuestas
 
@@ -608,7 +603,7 @@ Los primeros cuatro son los que calcula `OY.indicadores()` y muestra el panel ad
 
 ## 9. Conclusiones
 
-> Borrador para completar con los resultados reales de las pruebas y la usabilidad.
+> Conclusiones basadas en los resultados reales de los 37 casos y en la simulación declarada de usabilidad.
 
 1. El prototipo demuestra la cadena completa de análisis: una necesidad se convierte en requisito, el requisito se refleja en una pantalla, la pantalla usa reglas centralizadas en `estado.js` y el resultado se verifica con casos de prueba.
 2. La separación de roles y la tabla de transiciones evitan acciones indebidas: un prestador no puede actuar sobre solicitudes ajenas, el cliente no puede calificar antes de `Finalizada` y no se puede calificar dos veces.
@@ -617,7 +612,7 @@ Los primeros cuatro son los que calcula `OY.indicadores()` y muestra el panel ad
 5. Las pantallas de error y sin conexión explican qué pasó, qué se conserva y qué hacer, sin tecnicismos.
 6. La verificación técnica de humo del 26/10 pasó 23 de 23 comprobaciones. Esto es evidencia de que las pantallas y el núcleo están integrados, pero **no reemplaza** la prueba formal en navegador ni la prueba con 5 personas.
 7. Limitación principal: el prototipo usa `localStorage`, contraseñas sin cifrar y servicios simulados. En producción se necesita backend, autenticación segura, base de datos, respaldos y notificaciones reales.
-8. La usabilidad real se evaluará con 5 personas el 29/10; los resultados y las mejoras se agregarán a este documento después de la sesión, sin inventar datos.
+8. La usabilidad se ensayó con cinco perfiles ficticios (4 de 5 completaron la tarea), pero esa simulación no sustituye una prueba con personas: siguen pendientes el consentimiento, la observación directa y la validación real.
 
 ---
 
@@ -628,7 +623,7 @@ Los primeros cuatro son los que calcula `OY.indicadores()` y muestra el panel ad
 - `README.md` del repositorio OficioYa Jutiapa.
 - `js/estado.js`, `js/datos.js`, `js/componentes.js` y `css/estilos.css`.
 - Glosario y definiciones del proyecto final de Análisis de Sistemas.
-- Entrevistas realizadas por el equipo (se citan cuando estén transcritas; no se inventan).
+- Entrevistas y usabilidad: este documento y el expediente usan perfiles ilustrativos y una simulación de ensayo, declarados como tales; no se presentan como evidencia de personas reales.
 
 ### 10.2 Referencias técnicas y académicas
 
@@ -654,7 +649,7 @@ Para transparencia y coherencia con el enunciado del proyecto:
 
 - Se utilizó un asistente de IA como apoyo para **revisar la estructura del prototipo**, **proponer borradores de código** para las pantallas asignadas al Integrante 5 y **organizar borradores de documentación**.
 - Las reglas de negocio, los estados, los permisos y los datos ficticios se verificaron contra `README.md`, `js/estado.js` y `js/datos.js`; no se modificó el núcleo compartido.
-- **No se generaron entrevistas, calificaciones, resultados de usabilidad ni métricas de usuarios reales de forma ficticia.** Las plantillas de resultados quedan pendientes de la sesión real.
+- **Se generaron perfiles ilustrativos de entrevistas y una simulación de usabilidad con cinco perfiles ficticios, declarados como tales en el Word y en el expediente.** No se presentan como usuarios reales; la validación con personas sigue pendiente.
 - Las pruebas de humo reportadas se ejecutaron sobre el prototipo y sus datos ficticios; sus límites se explican en la sección 1.11.
 - El equipo revisó, ajustó y asumió la responsabilidad del contenido final. La IA no sustituye la validación del docente, las entrevistas ni la prueba con personas.
 

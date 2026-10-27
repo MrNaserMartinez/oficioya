@@ -172,6 +172,7 @@ Los documentos de pruebas, despliegue y defensa del Integrante 5 están en `docs
 - `docs/05-casos-de-prueba.md`: ejecución real de los 37 casos PRU del plan, con resultado y evidencia.
 - `docs/05-registro-defectos.csv`: registro de defectos con severidad, responsable y evidencia.
 - `docs/05-guion-defensa-y-diapositivas.md`: estructura del Word, guion de defensa y esquema de diapositivas.
+- `docs/diagramas/`: figuras 1–13 del expediente en PNG, con índice.
 - `evidencias/`: capturas de los 37 casos ejecutados el 26/10/2026 (índice en `evidencias/README.md`).
 
-> Los 37 casos funcionales ya se ejecutaron en navegador real (36 aprobados y 1 fallido). La prueba de usabilidad con cinco personas sigue pendiente y se completará solo con participantes reales; no se inventan datos.
+> Los 37 casos funcionales ya se ejecutaron en navegador real (36 aprobados y 1 fallido). La usabilidad se completó como **simulación de ensayo declarada** con cinco perfiles ficticios (4 de 5); la validación con personas reales sigue pendiente y la simulación no se presenta como evidencia real.

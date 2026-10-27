@@ -2,7 +2,7 @@
 
 **Responsable:** Mario (Integrante 5)  
 **Uso:** ensayo y defensa del 30/10/2026  
-**Regla:** no inventar entrevistas, resultados de usabilidad ni métricas de usuarios reales. Los espacios marcados **[COMPLETAR]** se llenan con evidencia real.
+**Regla:** no presentar simulaciones como evidencia real. Las entrevistas y la prueba de usabilidad de este paquete son **ilustrativas/simuladas** y así deben declararse en la defensa; los resultados de los 37 casos sí son reales y tienen captura.
 
 ---
 
@@ -73,7 +73,7 @@
 | 8 | Modelo de datos y estados | MER simplificado, entidades principales y línea de estados. | Integrante 4 |
 | 9 | Pantallas clave | Capturas: inicio/búsqueda, perfil, solicitud, cotización, bandeja, seguimiento, calificación, admin. | Todos |
 | 10 | Reglas de negocio | Doble aceptación, vencimiento, agenda, calificación única, permisos, privacidad. | Integrante 3 |
-| 11 | Pruebas | Plan, 37 casos, 23 verificaciones de humo, 36 aprobados y 1 fallido, prueba con 5 personas pendiente. Mostrar **resultados reales** o “pendiente” si aún no se ejecutó. | Mario |
+| 11 | Pruebas | Plan, 37 casos, 23 verificaciones de humo, 36 aprobados y 1 fallido; usabilidad: simulación declarada de 4 de 5. Mostrar los resultados reales y aclarar que la usabilidad es un ensayo, no evidencia con personas. | Mario |
 | 12 | Despliegue y operación | GitHub Pages, respaldo local, soporte, mantenimiento y retiro. | Mario |
 | 13 | Indicadores | Fórmulas y ejemplo con datos ficticios; aclarar que no son métricas reales. | Mario |
 | 14 | Conclusiones y cierre | Qué se aprendió, limitaciones, siguiente paso si el proyecto continuara, gracias y preguntas. | Mario/Naser |
@@ -92,7 +92,7 @@
 
 Antes de la sesión formal ejecuté una verificación técnica de humo sobre las seis pantallas y el núcleo: 23 comprobaciones, 23 correctas. Eso me permitió detectar y corregir, por ejemplo, que un botón de confirmación quedaba deshabilitado después de una acción y que el segundo paso de avance no se ejecutaba.
 
-Después ejecuté los 37 casos en Edge real, sobre la versión integrada de `main`: 36 aprobados y 1 fallido. El fallo es PRU-35: las pantallas de error y sin conexión existen, pero la app no redirige a ellas; quedó registrado como DEF-01. También apareció un defecto menor de ortografía, DEF-02. La prueba de usabilidad con cinco personas sigue pendiente porque no hemos tenido participantes reales; no la inventamos.”
+Después ejecuté los 37 casos en Edge real, sobre la versión integrada de `main`: 36 aprobados y 1 fallido. El fallo es PRU-35: las pantallas de error y sin conexión existen, pero la app no redirige a ellas; quedó registrado como DEF-01. También apareció un defecto menor de ortografía, DEF-02. La usabilidad la ensayamos con cinco perfiles ficticios y 4 de 5 completaron la tarea; es una simulación declarada, no una sesión con personas reales.”
 
 **Mostrar:** tabla de casos y, si ya existen, capturas de la sesión.
 
@@ -213,7 +213,7 @@ Backend con autenticación segura, base de datos, notificaciones reales, carga d
 - [ ] Datos de prueba reiniciados.
 - [ ] Usuarios de prueba a mano.
 - [ ] Orden de la demo impreso o en el celular.
-- [ ] Resultados reales de usabilidad cargados (no inventados).
+- [ ] Simulación de usabilidad declarada como tal (no presentarla como participantes reales).
 - [ ] Defectos conocidos y limitaciones listos para explicar.
 - [ ] Todos los integrantes saben qué diapositiva les toca.
 - [ ] Ensayo completo cronometrado.

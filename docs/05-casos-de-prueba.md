@@ -74,7 +74,7 @@ El único caso fallido es **PRU-35**. Los defectos abiertos son **DEF-01** (PRU-
 
 ## Prueba de usabilidad
 
-**Pendiente.** No se ejecutó la sesión con cinco participantes reales. Las Tablas 5 y 6 del Word quedan marcadas como pendientes y no contienen datos inventados. Para completarlas hacen falta: consentimiento, observación de la tarea «Busque un electricista y complete una solicitud sin ayuda», registro de tiempo y dificultades, y al menos cuatro de cinco participantes que la completen sin ayuda.
+**Simulación de ensayo, no evidencia real.** La sesión con cinco participantes reales no se ejecutó. Para no dejar el formato vacío se completó una simulación con cinco perfiles ficticios, declarada como tal en el Word y en el expediente: 4 de 5 completaron la tarea «Busque un electricista y complete una solicitud sin ayuda», con tiempos de 2.9 a 8.5 minutos. El perfil U3 no completó porque confundió el costo de visita con el precio final. Estos datos **no** deben presentarse como usabilidad real; siguen pendientes el consentimiento, la observación directa y la validación con personas.
 
 ## Defectos
 
