@@ -11,31 +11,34 @@
 <body data-base="../">
   <div id="navbar"></div>
 
+  <!-- =====================================================
+       Excepción: sin prestadores disponibles — Responsable: Integrante 2
+       Requisito: RF04 (excepción). Se usa en la DEMO de excepción:
+       Herrero + "Disponible ahora" no devuelve a nadie.
+       Recibe los mismos parámetros que cliente/busqueda.html
+       (oficio, zona, ahora, verificados) y propone alternativas.
+       ===================================================== -->
   <main class="container pb-5">
     <h1 class="titulo-pagina h3">Sin prestadores disponibles</h1>
     <div id="mensaje"></div>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
-         Requisito(s): RF04 (excepción)
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 2</strong> · RF04 (excepción)</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Explicar que no hay prestadores para ese oficio/zona/horario</li>
-        <li>Opciones: cambiar zona, quitar "disponible ahora", programar para otra fecha, volver a buscar</li>
-        <li>Esta pantalla se usa en la DEMO de excepción</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>UI.iniciarPagina()</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Herrero + "disponible ahora" no devuelve a nadie.</p>
+    <section class="tarjeta estado-vacio" aria-live="polite">
+      <i class="bi bi-person-x" aria-hidden="true"></i>
+      <h2 class="h5 fw-bold text-body">No encontramos prestadores con esos filtros</h2>
+      <p class="mb-2" id="explicacion"></p>
+      <div id="filtrosUsados" class="d-flex flex-wrap gap-2 justify-content-center"></div>
     </section>
+
+    <section class="mt-4" aria-labelledby="tituloOpciones">
+      <h2 id="tituloOpciones" class="h5 fw-bold mb-1">¿Qué puedes hacer?</h2>
+      <p class="texto-suave small mb-3">Te mostramos cuántos prestadores encontrarías con cada cambio.</p>
+      <div class="row g-3" id="alternativas"></div>
+    </section>
+
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <a class="btn btn-primary" id="btnReintentar" href="../cliente/busqueda.html"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Volver a buscar</a>
+      <a class="btn btn-outline-secondary" href="../index.html"><i class="bi bi-house" aria-hidden="true"></i> Ir al inicio</a>
+    </div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -44,7 +47,107 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina();
-    // Tu código aquí.
+
+    const params = new URLSearchParams(location.search);
+    const oficio = OY.obtener("oficios", params.get("oficio") || "");
+    const zonaId = OY.obtener("zonas", params.get("zona") || "") ? params.get("zona") : "";
+    const ahora = params.get("ahora") === "1";
+    const verificados = params.get("verificados") === "1";
+    const base = { oficioId: oficio ? oficio.id : undefined, zonaId: zonaId || undefined, disponibleAhora: ahora, soloVerificados: verificados };
+
+    function query(f) {
+      const q = new URLSearchParams();
+      if (f.oficioId) q.set("oficio", f.oficioId);
+      if (f.zonaId) q.set("zona", f.zonaId);
+      if (f.disponibleAhora) q.set("ahora", "1");
+      if (f.soloVerificados) q.set("verificados", "1");
+      const s = q.toString();
+      return "../cliente/busqueda.html" + (s ? "?" + s : "");
+    }
+    const contar = f => OY.buscarPrestadores(f).length;
+
+    /* ---------- Qué se buscó ---------- */
+    const chips = [];
+    if (oficio) chips.push(`<i class="bi ${UI.escapar(oficio.icono)}" aria-hidden="true"></i> ${UI.escapar(oficio.nombre)}`);
+    if (zonaId) chips.push(`<i class="bi bi-geo-alt" aria-hidden="true"></i> ${UI.escapar(OY.nombreZona(zonaId))}`);
+    if (ahora) chips.push(`<i class="bi bi-lightning-charge" aria-hidden="true"></i> Disponible ahora`);
+    if (verificados) chips.push(`<i class="bi bi-patch-check" aria-hidden="true"></i> Solo verificados`);
+    document.getElementById("filtrosUsados").innerHTML = chips.map(c => `<span class="sello sello-pendiente">${c}</span>`).join("");
+
+    let explicacion = "En este momento no hay prestadores que cumplan con todo lo que pediste.";
+    if (oficio && oficio.activo === false) {
+      explicacion = `El oficio ${oficio.nombre} no está disponible por ahora en la plataforma.`;
+    } else if (ahora) {
+      explicacion = `Ningún prestador${oficio ? " de " + oficio.nombre : ""}${zonaId ? " en " + OY.nombreZona(zonaId) : ""} puede atenderte de inmediato a esta hora. Puede que estén fuera de su horario o que ese oficio no ofrezca atención inmediata.`;
+    } else if (zonaId) {
+      explicacion = `Ningún prestador${oficio ? " de " + oficio.nombre : ""} cubre ${OY.nombreZona(zonaId)} por ahora.`;
+    }
+    if (chips.length === 0) explicacion = "No hay prestadores activos en la plataforma por ahora.";
+    document.getElementById("explicacion").textContent = explicacion;
+
+    document.getElementById("btnReintentar").href = query(base);
+
+    /* ---------- Alternativas: se calcula cuántos resultados daría cada cambio ---------- */
+    const opciones = [];
+
+    if (ahora) {
+      const n = contar(Object.assign({}, base, { disponibleAhora: false }));
+      opciones.push({
+        n, icono: "bi-calendar-event", url: query(Object.assign({}, base, { disponibleAhora: false })),
+        titulo: "Programar para otra fecha u hora",
+        texto: "Quita \"Disponible ahora\" y elige con el prestador un día y una franja horaria."
+      });
+    }
+    if (zonaId) {
+      const n = contar(Object.assign({}, base, { zonaId: undefined }));
+      opciones.push({
+        n, icono: "bi-geo-alt", url: query(Object.assign({}, base, { zonaId: undefined })),
+        titulo: "Buscar en otros sectores",
+        texto: "Mira prestadores de sectores cercanos; algunos se trasladan."
+      });
+    }
+    if (verificados) {
+      const n = contar(Object.assign({}, base, { soloVerificados: false }));
+      opciones.push({
+        n, icono: "bi-patch-question", url: query(Object.assign({}, base, { soloVerificados: false })),
+        titulo: "Incluir prestadores sin verificar",
+        texto: "Aún no se han revisado sus datos; revisa su perfil y calificaciones antes de pedir."
+      });
+    }
+    if (ahora && zonaId) {
+      const f = Object.assign({}, base, { disponibleAhora: false, zonaId: undefined });
+      opciones.push({
+        n: contar(f), icono: "bi-arrows-angle-expand", url: query(f),
+        titulo: "Quitar sector y \"Disponible ahora\"",
+        texto: "Amplía la búsqueda al máximo dentro del mismo oficio."
+      });
+    }
+    if (oficio) {
+      opciones.push({
+        n: null, icono: "bi-grid", url: "../index.html",
+        titulo: "Elegir otro oficio",
+        texto: "Vuelve al inicio y revisa los demás oficios disponibles."
+      });
+    }
+
+    const cont = document.getElementById("alternativas");
+    cont.innerHTML = opciones.map(o => {
+      const sinResultado = o.n === 0;
+      const conteo = o.n === null ? "" :
+        `<p class="small fw-semibold mb-0 mt-1">${sinResultado ? "Tampoco hay resultados así" : `${o.n} prestador${o.n === 1 ? "" : "es"} disponible${o.n === 1 ? "" : "s"}`}</p>`;
+      const etiqueta = sinResultado ? "div" : "a";
+      return `<div class="col-md-6">
+        <${etiqueta} class="tarjeta alternativa ${sinResultado ? "opacity-75" : ""}" ${sinResultado ? 'aria-disabled="true"' : `href="${o.url}"`}>
+          <i class="bi ${o.icono}" aria-hidden="true"></i>
+          <div><h3 class="h6 fw-bold mb-1">${UI.escapar(o.titulo)}</h3>
+            <p class="small texto-suave mb-0">${UI.escapar(o.texto)}</p>${conteo}</div>
+        </${etiqueta}></div>`;
+    }).join("") || `<div class="col-12"><p class="texto-suave">Vuelve a intentarlo más tarde.</p></div>`;
+
+    // Si al volver a buscar ya hay resultados (ej. cambió la hora), avisar
+    if (chips.length && contar(base) > 0) {
+      UI.alerta("mensaje", "success", "¡Ahora sí hay prestadores con tu búsqueda! Toca \"Volver a buscar\".");
+    }
   </script>
 </body>
 </html>
