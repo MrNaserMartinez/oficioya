@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Error | OficioYa Jutiapa</title>
+  <title>Algo salió mal | OficioYa Jutiapa</title>
   <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="../css/estilos.css">
@@ -12,30 +12,41 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Error</h1>
-    <div id="mensaje"></div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <section class="tarjeta text-center mt-4" aria-labelledby="tituloError">
+          <i class="bi bi-exclamation-triangle display-4 text-warning" aria-hidden="true"></i>
+          <h1 class="h3 fw-bold mt-2" id="tituloError">Algo no salió como esperábamos</h1>
+          <p class="texto-suave" id="textoError">No pudimos completar la operación. Tus datos siguen guardados y no se envió nada dos veces.</p>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): Conectividad / excepciones
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · Conectividad / excepciones</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Mensaje claro de que algo falló, sin términos técnicos</li>
-        <li>Botones: reintentar y volver al inicio</li>
-        <li>Aclarar que no se envió nada dos veces</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>UI.iniciarPagina()</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Pantalla estática.</p>
-    </section>
+          <div class="alert alert-info text-start small" role="note">
+            <p class="fw-semibold mb-1"><i class="bi bi-info-circle" aria-hidden="true"></i> Qué puedes hacer</p>
+            <ul class="mb-0">
+              <li>Vuelve a intentarlo desde la página anterior.</li>
+              <li>Si estabas creando una solicitud, revisa primero <strong>Mis solicitudes</strong> para no duplicarla.</li>
+              <li>Si el problema continúa, repórtalo a Soporte con el código de referencia de abajo.</li>
+            </ul>
+          </div>
+
+          <div class="d-flex flex-wrap justify-content-center gap-2">
+            <button class="btn btn-primary" type="button" id="btnReintentar">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reintentar
+            </button>
+            <a class="btn btn-outline-primary" id="btnInicio" href="../index.html">Volver al inicio</a>
+            <a class="btn btn-outline-secondary d-none" id="btnMisSolicitudes" href="#">Mis solicitudes</a>
+          </div>
+
+          <p class="small texto-suave mt-4 mb-0">
+            Código de referencia: <span class="font-monospace" id="referencia">—</span><br>
+            Anota este código si necesitas que Soporte revise el caso.
+          </p>
+        </section>
+
+        <p class="small texto-suave text-center mt-3 mb-0">
+          Esta pantalla de excepción forma parte del prototipo. No se reenvía ninguna acción automáticamente.
+        </p>
+      </div>
+    </div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -44,7 +55,72 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina();
-    // Tu código aquí.
+    const params = new URLSearchParams(window.location.search);
+
+    const MENSAJES = {
+      "404": {
+        titulo: "No encontramos esa página",
+        texto: "El enlace puede estar incompleto o la página cambió de lugar. Revisa la dirección o vuelve al inicio."
+      },
+      "permiso": {
+        titulo: "No tienes permiso para ver esto",
+        texto: "Tu cuenta no tiene el rol necesario para abrir esta pantalla. Si crees que es un error, comunícate con Soporte."
+      },
+      "datos": {
+        titulo: "No pudimos guardar los datos",
+        texto: "La operación no se completó. Revisa los datos e inténtalo otra vez; no se envió nada dos veces."
+      },
+      "sesion": {
+        titulo: "Tu sesión ya no está activa",
+        texto: "Por seguridad, vuelve a ingresar con tu correo y contraseña para continuar."
+      }
+    };
+
+    const codigo = params.get("codigo");
+    const info = Object.prototype.hasOwnProperty.call(MENSAJES, codigo) ? MENSAJES[codigo] : {
+      titulo: "Algo no salió como esperábamos",
+      texto: "No pudimos completar la operación. Tus datos siguen guardados y no se envió nada dos veces."
+    };
+    document.getElementById("tituloError").textContent = info.titulo;
+    document.getElementById("textoError").textContent = info.texto;
+
+    const refRecibida = params.get("ref");
+    const referencia = refRecibida && /^[A-Za-z0-9-]{3,24}$/.test(refRecibida)
+      ? refRecibida
+      : "ERR-" + Date.now().toString(36).toUpperCase().slice(-6);
+    document.getElementById("referencia").textContent = referencia;
+
+    const inicio = u && u.rol ? "../" + OY.inicioPorRol(u.rol) : "../index.html";
+    document.getElementById("btnInicio").href = inicio;
+
+    const extra = document.getElementById("btnMisSolicitudes");
+    if (u && u.rol === "cliente") {
+      extra.href = "../cliente/historial.html";
+      extra.textContent = "Mis solicitudes";
+      extra.classList.remove("d-none");
+    } else if (u && u.rol === "prestador") {
+      extra.href = "../prestador/bandeja.html";
+      extra.textContent = "Mi bandeja";
+      extra.classList.remove("d-none");
+    }
+
+    const btnReintentar = document.getElementById("btnReintentar");
+    btnReintentar.addEventListener("click", function () {
+      if (!navigator.onLine) {
+        window.location.href = "sin-conexion.html";
+        return;
+      }
+      UI.bloquearBoton(this, "Reintentando…");
+      if (history.length > 1) {
+        history.back();
+      } else {
+        window.location.href = inicio;
+      }
+    });
+
+    /* Si el navegador restaura esta página desde la caché (botón Atrás/Adelante),
+       el botón vuelve a quedar disponible. */
+    window.addEventListener("pageshow", () => UI.liberarBoton(btnReintentar));
   </script>
 </body>
 </html>

@@ -12,34 +12,45 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Mis solicitudes</h1>
-    <div id="mensaje"></div>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <div>
+        <h1 class="titulo-pagina h3 mb-1">Mis solicitudes</h1>
+        <p class="texto-suave mb-0" id="resumenHistorial">Consulta el estado y el historial de tus servicios.</p>
+      </div>
+      <a class="btn btn-acento btn-sm mt-3" href="busqueda.html">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Nueva solicitud
+      </a>
+    </div>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): RF13
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · RF13</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Lista de OY.solicitudesDelUsuario() con oficio, prestador, fecha y UI.badgeEstado</li>
-        <li>Filtro por estado (activas / cerradas)</li>
-        <li>Cada una enlaza a seguimiento.html?solicitud=</li>
-        <li>Botón "Calificar" solo si OY.puedeCalificar(id)</li>
-        <li>Estado vacío si no tiene solicitudes</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.solicitudesDelUsuario()</code></li>
-        <li><code>OY.puedeCalificar(id)</code></li>
-        <li><code>OY.formatoFecha(iso)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">cliente@demo.com tiene finalizadas, una vencida y las que creen.</p>
+    <div id="mensaje"></div>
+    <div id="avisoCalificar"></div>
+
+    <section class="tarjeta mb-3" aria-label="Buscar y filtrar mis solicitudes">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-7">
+          <label for="buscarHistorial" class="form-label small">Buscar</label>
+          <div class="input-group">
+            <span class="input-group-text" id="iconoBuscarHistorial"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input type="search" class="form-control" id="buscarHistorial" placeholder="Oficio, prestador, zona o número de solicitud" aria-describedby="iconoBuscarHistorial">
+          </div>
+        </div>
+        <div class="col-md-5">
+          <span class="form-label small d-block" id="etiquetaFiltroHistorial">Mostrar</span>
+          <div class="btn-group w-100" role="group" aria-labelledby="etiquetaFiltroHistorial">
+            <input type="radio" class="btn-check" name="filtroHistorial" id="hTodas" value="todas" checked>
+            <label class="btn btn-outline-primary btn-sm" for="hTodas">Todas</label>
+            <input type="radio" class="btn-check" name="filtroHistorial" id="hActivas" value="activas">
+            <label class="btn btn-outline-primary btn-sm" for="hActivas">Activas</label>
+            <input type="radio" class="btn-check" name="filtroHistorial" id="hCerradas" value="cerradas">
+            <label class="btn btn-outline-primary btn-sm" for="hCerradas">Cerradas</label>
+            <input type="radio" class="btn-check" name="filtroHistorial" id="hCalificar" value="calificar">
+            <label class="btn btn-outline-primary btn-sm" for="hCalificar">Por calificar</label>
+          </div>
+        </div>
+      </div>
     </section>
+
+    <div id="listaHistorial"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -48,7 +59,205 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina({ roles: ["cliente"] });
-    // Tu código aquí.
+    const esc = UI.escapar;
+
+    if (u) iniciarHistorial();
+
+    function iniciarHistorial() {
+      document.getElementById("buscarHistorial").addEventListener("input", pintarHistorial);
+      document.querySelectorAll('input[name="filtroHistorial"]').forEach(r => r.addEventListener("change", pintarHistorial));
+      document.addEventListener("click", e => {
+        if (e.target.closest("[data-limpiar-historial]")) {
+          document.getElementById("buscarHistorial").value = "";
+          document.getElementById("hTodas").checked = true;
+          pintarHistorial();
+        }
+      });
+      pintarHistorial();
+    }
+
+    function filtroHistorial() {
+      const r = document.querySelector('input[name="filtroHistorial"]:checked');
+      return r ? r.value : "todas";
+    }
+
+    function esActiva(s) {
+      return !OY.ESTADOS_FINALES.includes(s.estado);
+    }
+
+    function fechaCorta(fecha) {
+      if (!fecha) return "—";
+      const p = String(fecha).split("-");
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(fecha);
+    }
+
+    function horarioDe(s) {
+      if (!s.horario) return "Por coordinar";
+      if (s.horario.tipo === "Inmediata") return "Atención inmediata";
+      return `${fechaCorta(s.horario.fecha)} · ${s.horario.franja || "franja por coordinar"}`;
+    }
+
+    function calificacionDe(solicitudId) {
+      return OY.listar("calificaciones", c => c.solicitudId === solicitudId)[0] || null;
+    }
+
+    function pintarHistorial() {
+      const lista = OY.solicitudesDelUsuario();
+      const filtro = filtroHistorial();
+      const termino = document.getElementById("buscarHistorial").value.trim().toLowerCase();
+
+      const coincide = s => !termino || [
+        s.id, s.descripcion, OY.nombreOficio(s.oficioId), OY.nombrePrestador(s.prestadorId), OY.nombreZona(s.zonaId)
+      ].join(" ").toLowerCase().includes(termino);
+
+      const visibles = lista.filter(s => {
+        if (!coincide(s)) return false;
+        if (filtro === "activas") return esActiva(s);
+        if (filtro === "cerradas") return !esActiva(s);
+        if (filtro === "calificar") return OY.puedeCalificar(s.id);
+        return true;
+      });
+
+      const activas = lista.filter(esActiva).length;
+      const finalizadas = lista.filter(s => s.estado === "Finalizada").length;
+      const porCalificar = lista.filter(s => OY.puedeCalificar(s.id)).length;
+
+      document.getElementById("resumenHistorial").textContent =
+        `${lista.length} ${lista.length === 1 ? "solicitud" : "solicitudes"} · ${activas} activas · ${finalizadas} finalizadas.`;
+
+      const aviso = document.getElementById("avisoCalificar");
+      if (porCalificar) {
+        aviso.innerHTML = `
+          <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3" role="status">
+            <div><i class="bi bi-star" aria-hidden="true"></i>
+              Tienes <strong>${porCalificar}</strong> ${porCalificar === 1 ? "servicio finalizado" : "servicios finalizados"} sin calificar.
+            </div>
+            <button class="btn btn-sm btn-warning" type="button" id="btnVerPorCalificar">Ver los que faltan</button>
+          </div>`;
+        document.getElementById("btnVerPorCalificar").addEventListener("click", () => {
+          document.getElementById("hCalificar").checked = true;
+          pintarHistorial();
+          document.getElementById("listaHistorial").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      } else {
+        aviso.innerHTML = "";
+      }
+
+      const cont = document.getElementById("listaHistorial");
+
+      if (!visibles.length) {
+        if (!lista.length) {
+          cont.innerHTML = `
+            <div class="tarjeta estado-vacio">
+              <i class="bi bi-clipboard-plus" aria-hidden="true"></i>
+              <p class="mb-1 fw-semibold">Todavía no tienes solicitudes.</p>
+              <p class="small mb-3">Busca un prestador por oficio y zona para pedir tu primer servicio.</p>
+              <a class="btn btn-acento btn-sm" href="busqueda.html">Buscar un prestador</a>
+            </div>`;
+        } else if (filtro === "calificar") {
+          cont.innerHTML = `
+            <div class="tarjeta estado-vacio">
+              <i class="bi bi-stars" aria-hidden="true"></i>
+              <p class="mb-1 fw-semibold">No tienes servicios pendientes de calificar.</p>
+              <p class="small mb-3">Solo se puede calificar un servicio <strong>Finalizado</strong>, una sola vez.</p>
+              <button class="btn btn-outline-primary btn-sm" type="button" data-limpiar-historial>Ver todas mis solicitudes</button>
+            </div>`;
+        } else {
+          cont.innerHTML = `
+            <div class="tarjeta estado-vacio">
+              <i class="bi bi-funnel" aria-hidden="true"></i>
+              <p class="mb-2">No hay solicitudes que coincidan con tu búsqueda o filtro.</p>
+              <button class="btn btn-outline-primary btn-sm" type="button" data-limpiar-historial>Limpiar filtros</button>
+            </div>`;
+        }
+        return;
+      }
+
+      cont.innerHTML = `<div class="d-grid gap-3">${visibles.map(tarjetaHistorial).join("")}</div>`;
+    }
+
+    function tarjetaHistorial(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const icono = oficio ? oficio.icono : "bi-tools";
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      const cal = calificacionDe(s.id);
+      const total = cot ? OY.totalesCotizacion(cot).total : null;
+      const puedeCalificar = OY.puedeCalificar(s.id);
+
+      return `
+        <article class="tarjeta">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div class="pe-2">
+              <h2 class="h6 fw-bold mb-1">
+                <i class="bi ${esc(icono)}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))}
+                <span class="texto-suave fw-normal">· ${esc(s.id)}</span>
+              </h2>
+              <div class="small texto-suave">
+                <span><i class="bi bi-person-badge" aria-hidden="true"></i> ${esc(OY.nombrePrestador(s.prestadorId))}</span>
+                <span class="mx-1" aria-hidden="true">·</span>
+                <span><i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}</span>
+                <span class="mx-1" aria-hidden="true">·</span>
+                <span>${esc(s.modalidad)}</span>
+              </div>
+            </div>
+            <div class="text-end">${UI.badgeEstado(s.estado)}</div>
+          </div>
+
+          <p class="mt-2 mb-2 text-break">${esc(s.descripcion)}</p>
+
+          <div class="row g-2 small">
+            <div class="col-md-4"><strong>Creada:</strong> ${esc(OY.formatoFecha(s.fechaCreacion))}</div>
+            <div class="col-md-4"><strong>Horario:</strong> ${esc(horarioDe(s))}</div>
+            <div class="col-md-4"><strong>Cotización:</strong> ${cot ? `${esc(cot.tipoPrecio)} · ${OY.formatoQ(total)}` : "Aún no hay"}</div>
+          </div>
+
+          ${cal ? `
+            <div class="border rounded p-2 mt-2 small">
+              <div class="d-flex flex-wrap justify-content-between gap-2">
+                <span class="fw-semibold"><i class="bi bi-star-fill text-warning" aria-hidden="true"></i> Tu calificación</span>
+                <span>${UI.estrellas(cal.puntuacion)} <span class="texto-suave">${cal.puntuacion}/5 · ${esc(OY.formatoFecha(cal.fecha, false))}</span></span>
+              </div>
+              ${cal.comentario ? `<p class="mb-0 mt-1">“${esc(cal.comentario)}”</p>` : ""}
+            </div>` : ""}
+
+          ${s.estado === "Finalizada" && !cal ? `
+            <div class="alert alert-success small py-2 mt-2 mb-0">
+              <i class="bi bi-check-all" aria-hidden="true"></i> El servicio terminó. Puedes calificarlo para ayudar a otros clientes.
+            </div>` : ""}
+
+          ${accionesHistorial(s, cot, puedeCalificar)}
+        </article>`;
+    }
+
+    function accionesHistorial(s, cot, puedeCalificar) {
+      const acciones = [];
+
+      if (s.estado === "Pendiente de aprobación" && cot) {
+        acciones.push(`<a class="btn btn-sm btn-acento" href="cotizacion.html?solicitud=${encodeURIComponent(s.id)}">
+          <i class="bi bi-receipt" aria-hidden="true"></i> Revisar cotización</a>`);
+      }
+
+      if (puedeCalificar) {
+        acciones.push(`<a class="btn btn-sm btn-warning" href="calificar.html?solicitud=${encodeURIComponent(s.id)}">
+          <i class="bi bi-star" aria-hidden="true"></i> Calificar servicio</a>`);
+      }
+
+      acciones.push(`<a class="btn btn-sm btn-outline-primary" href="seguimiento.html?solicitud=${encodeURIComponent(s.id)}">
+        <i class="bi bi-activity" aria-hidden="true"></i> Ver seguimiento</a>`);
+
+      if (s.estado !== "Solicitada") {
+        acciones.push(`<a class="btn btn-sm btn-outline-secondary" href="reclamo.html?solicitud=${encodeURIComponent(s.id)}">
+          <i class="bi bi-life-preserver" aria-hidden="true"></i> Presentar reclamo</a>`);
+      }
+
+      if (["Rechazada", "Vencida", "Cancelada"].includes(s.estado)) {
+        acciones.push(`<a class="btn btn-sm btn-outline-secondary" href="solicitud.html?prestador=${encodeURIComponent(s.prestadorId)}&oficio=${encodeURIComponent(s.oficioId)}">
+          <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Volver a solicitar</a>`);
+      }
+
+      return `<div class="d-flex flex-wrap gap-2 mt-3">${acciones.join("")}</div>`;
+    }
   </script>
 </body>
 </html>

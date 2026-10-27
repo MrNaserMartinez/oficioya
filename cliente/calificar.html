@@ -12,31 +12,16 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb small mt-3 mb-0">
+        <li class="breadcrumb-item"><a href="historial.html">Mis solicitudes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Calificar servicio</li>
+      </ol>
+    </nav>
+
     <h1 class="titulo-pagina h3">Calificar servicio</h1>
     <div id="mensaje"></div>
-
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): RF12
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · RF12</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?solicitud=; si OY.puedeCalificar(id) es false, explicar por qué (no finalizado o ya calificado)</li>
-        <li>Selector de 1 a 5 estrellas accesible (radios con etiqueta, no solo íconos) y comentario</li>
-        <li>Guardar con OY.calificar(id, puntuacion, comentario)</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.puedeCalificar(id)</code></li>
-        <li><code>OY.calificar(id, puntuacion, comentario)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Finalicen un servicio en la demo y califíquenlo; SOL-0001 ya está calificada (debe impedirlo).</p>
-    </section>
+    <div id="contenido"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -45,7 +30,192 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina({ roles: ["cliente"] });
-    // Tu código aquí.
+    const esc = UI.escapar;
+
+    if (u) iniciarCalificacion();
+
+    function iniciarCalificacion() {
+      const id = new URLSearchParams(window.location.search).get("solicitud");
+      if (!id) {
+        mostrarError("Falta indicar la solicitud", "Abre esta pantalla desde <strong>Mis solicitudes</strong> con el botón «Calificar servicio».");
+        return;
+      }
+
+      const s = OY.obtener("solicitudes", id);
+      if (!s || s.clienteId !== u.cuenta.id) {
+        mostrarError("Solicitud no encontrada", "No encontramos esa solicitud en tu cuenta. Revisa <strong>Mis solicitudes</strong> e inténtalo de nuevo.");
+        return;
+      }
+
+      const cal = OY.listar("calificaciones", c => c.solicitudId === s.id)[0] || null;
+
+      document.getElementById("contenido").innerHTML = tarjetaResumen(s) + cuerpoCalificacion(s, cal);
+
+      if (!cal && OY.puedeCalificar(s.id)) prepararFormulario(s.id);
+    }
+
+    function mostrarError(titulo, texto) {
+      document.getElementById("contenido").innerHTML = `
+        <div class="tarjeta estado-vacio">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          <h2 class="h5 fw-bold">${esc(titulo)}</h2>
+          <p class="small mb-3">${texto}</p>
+          <a class="btn btn-primary btn-sm" href="historial.html">Ir a mis solicitudes</a>
+        </div>`;
+    }
+
+    function tarjetaResumen(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const icono = oficio ? oficio.icono : "bi-tools";
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      const total = cot ? OY.totalesCotizacion(cot).total : null;
+      const fin = OY.historialDe(s.id).filter(h => h.estadoNuevo === "Finalizada").pop();
+
+      return `
+        <section class="tarjeta mb-3" aria-label="Datos del servicio">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h5 fw-bold mb-1">
+                <i class="bi ${esc(icono)}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))}
+                <span class="texto-suave fw-normal fs-6">· ${esc(s.id)}</span>
+              </h2>
+              <p class="small texto-suave mb-0">
+                <i class="bi bi-person-badge" aria-hidden="true"></i> ${esc(OY.nombrePrestador(s.prestadorId))}
+                <span class="mx-1" aria-hidden="true">·</span>
+                <i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}
+              </p>
+            </div>
+            <div>${UI.badgeEstado(s.estado)}</div>
+          </div>
+          <p class="mt-2 mb-2 text-break">${esc(s.descripcion)}</p>
+          <div class="row g-2 small">
+            <div class="col-md-4"><strong>Servicio finalizado:</strong> ${fin ? esc(OY.formatoFecha(fin.fecha)) : "—"}</div>
+            <div class="col-md-4"><strong>Modalidad:</strong> ${esc(s.modalidad)}</div>
+            <div class="col-md-4"><strong>Total cotizado:</strong> ${total === null ? "Sin cotización" : OY.formatoQ(total)}</div>
+          </div>
+        </section>`;
+    }
+
+    function cuerpoCalificacion(s, cal) {
+      if (cal) {
+        return `
+          <section class="tarjeta text-center" aria-labelledby="tituloYaCalificada">
+            <i class="bi bi-patch-check text-success display-5" aria-hidden="true"></i>
+            <h2 class="h5 fw-bold mt-2" id="tituloYaCalificada">Este servicio ya fue calificado</h2>
+            <p class="texto-suave small">Solo se permite una calificación por servicio.</p>
+            <div class="fs-3 my-2">${UI.estrellas(cal.puntuacion)}</div>
+            <p class="mb-1 fw-semibold">${cal.puntuacion} de 5 estrellas</p>
+            <p class="texto-suave small mb-2">Registrada el ${esc(OY.formatoFecha(cal.fecha))}</p>
+            ${cal.comentario
+              ? `<blockquote class="blockquote border rounded p-3 small mb-3">“${esc(cal.comentario)}”</blockquote>`
+              : '<p class="small texto-suave">No dejaste comentario.</p>'}
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+              <a class="btn btn-primary btn-sm" href="historial.html">Volver a mis solicitudes</a>
+              <a class="btn btn-outline-primary btn-sm" href="seguimiento.html?solicitud=${encodeURIComponent(s.id)}">Ver seguimiento</a>
+            </div>
+          </section>`;
+      }
+
+      if (s.estado !== "Finalizada") {
+        const noCompletado = ["Cancelada", "Rechazada", "Vencida"].includes(s.estado);
+        return `
+          <section class="tarjeta" aria-labelledby="tituloNoCalificar">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-info-circle text-primary fs-4" aria-hidden="true"></i>
+              <div>
+                <h2 class="h5 fw-bold mb-1" id="tituloNoCalificar">Todavía no puedes calificar</h2>
+                <p class="mb-2">Solo se puede calificar un servicio que esté <strong>Finalizado</strong>. Esta solicitud está en estado ${UI.badgeEstado(s.estado)}.</p>
+                ${noCompletado
+                  ? '<p class="texto-suave small mb-3">El servicio no llegó a completarse, por eso no admite calificación.</p>'
+                  : '<p class="texto-suave small mb-3">Cuando el prestador marque el trabajo como finalizado, podrás calificarlo desde <strong>Mis solicitudes</strong>.</p>'}
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-primary btn-sm" href="seguimiento.html?solicitud=${encodeURIComponent(s.id)}">Ver seguimiento</a>
+                  <a class="btn btn-outline-primary btn-sm" href="historial.html">Mis solicitudes</a>
+                </div>
+              </div>
+            </div>
+          </section>`;
+      }
+
+      return `
+        <form class="tarjeta" id="formCalificar" novalidate aria-labelledby="tituloCalificar">
+          <h2 class="h5 fw-bold" id="tituloCalificar">¿Cómo fue el servicio?</h2>
+          <p class="texto-suave small">Tu calificación ayuda a otros clientes de Jutiapa a elegir mejor. No incluyas datos personales en el comentario.</p>
+
+          <fieldset class="mb-3">
+            <legend class="form-label fs-6">Puntuación <span class="text-danger" aria-hidden="true">*</span></legend>
+            <div class="d-flex flex-wrap gap-2" id="opcionesEstrellas" role="radiogroup" aria-describedby="ayudaEstrellas">
+              ${[1, 2, 3, 4, 5].map(n => `
+                <input type="radio" class="btn-check" name="puntuacion" id="p${n}" value="${n}" autocomplete="off">
+                <label class="btn btn-outline-warning" for="p${n}">
+                  <span aria-hidden="true">${"★".repeat(n)}</span>
+                  <span class="small ms-1">${n}</span>
+                  <span class="visually-hidden"> ${n === 1 ? "estrella" : "estrellas"} de 5</span>
+                </label>`).join("")}
+            </div>
+            <div class="form-text" id="ayudaEstrellas">1 = muy malo · 5 = excelente.</div>
+            <div class="small fw-semibold mt-1" id="textoSeleccion" aria-live="polite"></div>
+          </fieldset>
+
+          <div class="mb-3">
+            <label for="comentario" class="form-label">Comentario (opcional)</label>
+            <textarea class="form-control" id="comentario" rows="3" maxlength="500" aria-describedby="contadorComentario" placeholder="Ej. Llegó a la hora acordada y explicó el trabajo."></textarea>
+            <div class="form-text d-flex justify-content-between" id="contadorComentario">
+              <span>Máximo 500 caracteres.</span><span><span id="numCaracteres">0</span>/500</span>
+            </div>
+          </div>
+
+          <div id="mensajeFormulario"></div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-acento" id="btnCalificar">
+              <i class="bi bi-star-fill" aria-hidden="true"></i> Enviar calificación
+            </button>
+            <a class="btn btn-outline-secondary" href="historial.html">Cancelar</a>
+          </div>
+        </form>`;
+    }
+
+    function prepararFormulario(solicitudId) {
+      const opciones = document.querySelectorAll('input[name="puntuacion"]');
+      const texto = document.getElementById("textoSeleccion");
+      const etiquetas = {
+        1: "Muy malo", 2: "Malo", 3: "Regular", 4: "Bueno", 5: "Excelente"
+      };
+
+      opciones.forEach(op => op.addEventListener("change", () => {
+        texto.textContent = op.checked ? `Seleccionaste ${op.value} de 5: ${etiquetas[op.value]}.` : "";
+      }));
+
+      const comentario = document.getElementById("comentario");
+      const contador = document.getElementById("numCaracteres");
+      comentario.addEventListener("input", () => { contador.textContent = comentario.value.length; });
+
+      document.getElementById("formCalificar").addEventListener("submit", e => {
+        e.preventDefault();
+        const elegida = document.querySelector('input[name="puntuacion"]:checked');
+        if (!elegida) {
+          UI.alerta("mensajeFormulario", "warning", "Elige una puntuación de 1 a 5 estrellas antes de enviar.");
+          document.getElementById("p1").focus();
+          return;
+        }
+
+        const boton = document.getElementById("btnCalificar");
+        UI.bloquearBoton(boton, "Guardando…");
+        const r = OY.calificar(solicitudId, elegida.value, comentario.value);
+        if (!r.ok) {
+          UI.liberarBoton(boton);
+          UI.alerta("mensajeFormulario", "danger", r.error);
+          return;
+        }
+
+        UI.alerta("mensaje", "success", "¡Gracias! Tu calificación se guardó correctamente.");
+        const s = OY.obtener("solicitudes", solicitudId);
+        document.getElementById("contenido").innerHTML = tarjetaResumen(s) + cuerpoCalificacion(s, r.dato);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
   </script>
 </body>
 </html>
