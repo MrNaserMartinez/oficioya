@@ -220,3 +220,83 @@ a { color: var(--oy-primario); }
 .alternativa:hover, .alternativa:focus-visible { color: inherit; box-shadow: 0 6px 18px rgba(20, 30, 45, .12); }
 .alternativa .bi { font-size: 1.4rem; color: var(--oy-acento-oscuro); }
 .estado-vacio .sello .bi { font-size: inherit; display: inline; margin: 0; color: inherit; }
+
+/* =========================================================
+   Integrante 4: cotización y seguimiento
+   ========================================================= */
+
+/* ---------- Cotización: rubros ---------- */
+.rubro {
+  border: 1px solid var(--oy-borde); border-radius: 10px;
+  padding: .75rem; background: var(--oy-superficie);
+}
+.rubro + .rubro { margin-top: .6rem; }
+.rubro .subtotal-rubro { font-weight: 700; white-space: nowrap; }
+.tipo-rubro {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .78rem; font-weight: 600; padding: .15rem .55rem;
+  border-radius: 999px; border: 1px solid var(--oy-borde); background: var(--oy-fondo);
+}
+.resumen-totales .fila-total {
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding: .35rem 0; border-bottom: 1px dashed var(--oy-borde);
+}
+.resumen-totales .fila-total:last-child { border-bottom: 0; }
+.resumen-totales .gran-total {
+  font-size: 1.35rem; font-weight: 700; border-top: 2px solid var(--oy-texto);
+  border-bottom: 0; margin-top: .4rem; padding-top: .6rem;
+}
+.aviso-modalidad {
+  border-left: 4px solid var(--oy-acento); background: #fff8f2;
+  border-radius: 8px; padding: .65rem .85rem;
+}
+@media (min-width: 992px) { .columna-fija { position: sticky; top: 1rem; } }
+
+/* ---------- Seguimiento: pasos del servicio ---------- */
+.pasos-servicio {
+  display: flex; list-style: none; padding: 0; margin: 0; gap: .25rem;
+  overflow-x: auto;
+}
+.pasos-servicio li {
+  flex: 1 1 0; min-width: 92px; text-align: center; font-size: .78rem;
+  color: var(--oy-texto-suave); position: relative; padding-top: 2.4rem;
+}
+.pasos-servicio li .bi {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--oy-borde); background: var(--oy-superficie); font-size: .95rem;
+}
+.pasos-servicio li.hecho { color: var(--oy-texto); }
+.pasos-servicio li.hecho .bi { background: #e5f5ea; border-color: #19693a; color: #19693a; }
+.pasos-servicio li.actual { color: var(--oy-texto); font-weight: 700; }
+.pasos-servicio li.actual .bi { background: var(--oy-acento); border-color: var(--oy-acento-oscuro); color: #fff; }
+
+/* ---------- Seguimiento: historial ---------- */
+.linea-tiempo { list-style: none; padding: 0; margin: 0; }
+.linea-tiempo li {
+  position: relative; padding: 0 0 1rem 1.4rem; border-left: 2px solid var(--oy-borde);
+  margin-left: .45rem;
+}
+.linea-tiempo li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.linea-tiempo li::before {
+  content: ""; position: absolute; left: -.45rem; top: .2rem;
+  width: .8rem; height: .8rem; border-radius: 50%;
+  background: var(--oy-superficie); border: 2px solid var(--oy-primario);
+}
+
+/* ---------- Seguimiento: chat ---------- */
+.chat {
+  max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem;
+  padding: .25rem; background: var(--oy-fondo); border-radius: 10px;
+}
+.mensaje-chat {
+  max-width: 85%; padding: .5rem .75rem; border-radius: 12px;
+  background: var(--oy-superficie); border: 1px solid var(--oy-borde); align-self: flex-start;
+}
+.mensaje-chat.mio { align-self: flex-end; background: #e8eefb; border-color: #bccbf0; }
+.mensaje-chat .meta { font-size: .72rem; color: var(--oy-texto-suave); }
+@media (max-width: 576px) {
+  .pasos-servicio { gap: 0; }
+  .pasos-servicio li { min-width: 0; font-size: .66rem; padding-top: 2.1rem; hyphens: auto; }
+  .pasos-servicio li .bi { width: 1.7rem; height: 1.7rem; font-size: .8rem; }
+}

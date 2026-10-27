@@ -12,43 +12,219 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Revisar y aprobar cotización</h1>
-    <div id="mensaje"></div>
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb small mt-3 mb-0">
+        <li class="breadcrumb-item"><a href="historial.html">Mis solicitudes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Cotización</li>
+      </ol>
+    </nav>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 4
-         Requisito(s): RF08
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 4</strong> · RF08</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?solicitud=; mostrar la cotización separando mano de obra, materiales, cargos y visita</li>
-        <li>Indicar si el precio es estimado o definitivo y hasta cuándo vence</li>
-        <li>Botones Aprobar / Rechazar (pedir motivo al rechazar)</li>
-        <li>Pago con UI.etiquetaSimulado("pago")</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.cotizacionDeSolicitud(id)</code></li>
-        <li><code>OY.totalesCotizacion(cot)</code></li>
-        <li><code>OY.aprobarCotizacion(id)</code></li>
-        <li><code>OY.rechazarCotizacion(id, motivo)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Entrar como cliente2@demo.com → SOL-0004 tiene la cotización COT-0003 pendiente.</p>
-    </section>
+    <h1 class="titulo-pagina h3">Revisar y aprobar cotización</h1>
+    <div id="mensaje" aria-live="polite"></div>
+    <div id="contenido"></div>
   </main>
+
+  <!-- Rechazo: el motivo es obligatorio (RN07) -->
+  <div class="modal fade" id="modalRechazo" tabindex="-1" aria-labelledby="tituloRechazo" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formRechazo" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloRechazo">Rechazar la cotización</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small" id="avisoRechazo"></p>
+          <label class="form-label" for="motivoRechazo">Motivo del rechazo</label>
+          <textarea class="form-control" id="motivoRechazo" rows="3" maxlength="250" required aria-describedby="errorMotivo"></textarea>
+          <div class="invalid-feedback" id="errorMotivo">Escribe el motivo para que el prestador sepa por qué.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+          <button type="submit" class="btn btn-danger" id="btnConfirmarRechazo">Rechazar cotización</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="../js/datos.js"></script>
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
+    /* Integrante 4 · RF08 · CU09 · RN02, RN05, RN07 · SEC-03
+       El cliente ve la cotización con los rubros separados y decide.
+       Aprobar = OY.aprobarCotizacion (valida la agenda y deja la solicitud
+       "Confirmada": nace el servicio contratado). Rechazar exige motivo. */
     const u = UI.iniciarPagina({ roles: ["cliente"] });
-    // Tu código aquí.
+    const esc = UI.escapar;
+    const id = new URLSearchParams(window.location.search).get("solicitud");
+    const ICONO = { "Mano de obra": "bi-person-gear", "Material": "bi-box-seam", "Cargo": "bi-receipt" };
+    const GRUPO = [["Mano de obra", "Mano de obra", "manoObra"], ["Material", "Materiales", "materiales"], ["Cargo", "Cargos", "cargos"]];
+
+    if (u) pintar();
+
+    function pintar() {
+      const s = id ? OY.obtener("solicitudes", id) : null;
+      const cont = document.getElementById("contenido");
+      if (!s || s.clienteId !== u.cuenta.id) {
+        cont.innerHTML = vacio("bi-exclamation-triangle", "Solicitud no encontrada", "No encontramos esa solicitud en tu cuenta. Ábrela desde <strong>Mis solicitudes</strong>.");
+        return;
+      }
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      if (!cot) {
+        cont.innerHTML = tarjetaSolicitud(s) + vacio("bi-hourglass", "Todavía no hay cotización",
+          `El prestador aún no envía su cotización. La solicitud está ${UI.badgeEstado(s.estado)}.`, botonSeguimiento(s, true));
+        return;
+      }
+      cont.innerHTML = tarjetaSolicitud(s) + `
+        <div class="row g-3">
+          <div class="col-lg-8">${detalle(cot)}</div>
+          <div class="col-lg-4">${decision(s, cot)}</div>
+        </div>`;
+      conectar(s, cot);
+    }
+
+    function vacio(icono, titulo, texto, botones) {
+      return `<div class="tarjeta estado-vacio">
+        <i class="bi ${icono}" aria-hidden="true"></i>
+        <h2 class="h5 fw-bold">${esc(titulo)}</h2>
+        <p class="small mb-3">${texto}</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">${botones || '<a class="btn btn-primary btn-sm" href="historial.html">Ir a mis solicitudes</a>'}</div>
+      </div>`;
+    }
+
+    function botonSeguimiento(s, principal) {
+      return `<a class="btn ${principal ? "btn-primary" : "btn-outline-primary"} btn-sm" href="seguimiento.html?solicitud=${encodeURIComponent(s.id)}">
+        <i class="bi bi-signpost-split" aria-hidden="true"></i> Ver seguimiento</a>`;
+    }
+
+    function tarjetaSolicitud(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const pr = OY.obtener("prestadores", s.prestadorId);
+      const ver = pr && pr.verificacion.estado === "Verificado"
+        ? `<span class="sello sello-verificado"><i class="bi bi-patch-check" aria-hidden="true"></i> Verificado</span>`
+        : `<span class="sello sello-pendiente"><i class="bi bi-hourglass" aria-hidden="true"></i> Sin verificar</span>`;
+      return `
+        <section class="tarjeta mb-3" aria-label="Datos de la solicitud">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h5 fw-bold mb-1">
+                <i class="bi ${esc(oficio ? oficio.icono : "bi-tools")}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))} <span class="texto-suave fw-normal fs-6">· ${esc(s.id)}</span>
+              </h2>
+              <p class="small texto-suave mb-0">
+                <i class="bi bi-person-badge" aria-hidden="true"></i> ${esc(OY.nombrePrestador(s.prestadorId))} ${ver}
+                <span class="mx-1" aria-hidden="true">·</span><i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}
+                <span class="mx-1" aria-hidden="true">·</span>${esc(s.modalidad)}
+              </p>
+            </div>
+            <div>${UI.badgeEstado(s.estado)}</div>
+          </div>
+          <p class="mt-2 mb-0 text-break">${esc(s.descripcion)}</p>
+        </section>`;
+    }
+
+    function detalle(cot) {
+      const t = OY.totalesCotizacion(cot);
+      const grupos = GRUPO.map(([tipo, titulo, campo]) => {
+        const filas = cot.detalles.filter(d => d.tipo === tipo);
+        if (!filas.length) return "";
+        return `
+          <h3 class="h6 fw-bold mt-3 mb-2"><span class="tipo-rubro"><i class="bi ${ICONO[tipo]}" aria-hidden="true"></i> ${titulo}</span></h3>
+          <ul class="list-unstyled mb-0">
+            ${filas.map(d => `<li class="d-flex justify-content-between gap-2 py-1 border-bottom">
+              <span class="text-break">${esc(d.descripcion)} <span class="texto-suave small">· ${d.cantidad} × ${OY.formatoQ(d.precioUnitario)}</span></span>
+              <span class="fw-semibold text-nowrap">${OY.formatoQ(d.cantidad * d.precioUnitario)}</span></li>`).join("")}
+          </ul>
+          <p class="text-end small mb-0 mt-1">Subtotal ${titulo.toLowerCase()}: <strong>${OY.formatoQ(t[campo])}</strong></p>`;
+      }).join("");
+      const tipoTexto = cot.tipoPrecio === "Definitivo"
+        ? "El precio es <strong>definitivo</strong>: no cambia si el trabajo es el descrito."
+        : "El precio es <strong>estimado</strong>: puede variar, pero cualquier trabajo adicional se pide como una solicitud nueva que debes aprobar (RN06).";
+      return `
+        <section class="tarjeta" aria-labelledby="tituloDetalle">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <h2 class="h5 fw-bold mb-0" id="tituloDetalle">Cotización ${esc(cot.id)}</h2>
+            <span class="tipo-rubro"><i class="bi bi-tag" aria-hidden="true"></i> Precio ${esc(cot.tipoPrecio.toLowerCase())}</span>
+          </div>
+          <p class="small texto-suave mb-0">Enviada el ${esc(OY.formatoFecha(cot.fecha))} por ${esc(OY.nombrePrestador(cot.prestadorId))}</p>
+          ${grupos}
+          ${t.visita ? `<div class="d-flex justify-content-between mt-3"><span><i class="bi bi-house-door" aria-hidden="true"></i> Costo de visita</span><strong>${OY.formatoQ(t.visita)}</strong></div>` : ""}
+          <div class="resumen-totales"><div class="fila-total gran-total"><span>Total</span><span>${OY.formatoQ(t.total)}</span></div></div>
+          <p class="small mt-2 mb-0">${tipoTexto}</p>
+        </section>`;
+    }
+
+    function decision(s, cot) {
+      const t = OY.totalesCotizacion(cot);
+      const pago = `<p class="small mb-0 mt-3"><i class="bi bi-cash-coin" aria-hidden="true"></i> El pago se acuerda con el prestador. ${UI.etiquetaSimulado("pago")}</p>`;
+      if (cot.estado === "Enviada" && s.estado === "Pendiente de aprobación") {
+        return `
+          <section class="tarjeta columna-fija" aria-labelledby="tituloDecision">
+            <h2 class="h5 fw-bold" id="tituloDecision">¿Aceptas esta cotización?</h2>
+            <p class="small mb-2"><i class="bi bi-clock" aria-hidden="true"></i> Tienes hasta el <strong>${esc(OY.formatoFecha(s.fechaLimite))}</strong>. Después vence sola (RN05).</p>
+            ${s.horario && s.horario.tipo === "Programada" ? `<p class="small mb-2"><i class="bi bi-calendar-event" aria-hidden="true"></i> Servicio para el ${esc(s.horario.fecha)}, ${esc(s.horario.franja)}.</p>` : ""}
+            <button type="button" class="btn btn-acento w-100 mt-2" id="btnAprobar"><i class="bi bi-check2-circle" aria-hidden="true"></i> Aprobar por ${OY.formatoQ(t.total)}</button>
+            <button type="button" class="btn btn-outline-danger w-100 mt-2" id="btnRechazar"><i class="bi bi-x-circle" aria-hidden="true"></i> Rechazar</button>
+            ${pago}
+            <div class="mt-3">${botonSeguimiento(s)}</div>
+          </section>`;
+      }
+      const textos = {
+        "Aprobada": ["bi-check-circle text-success", "Cotización aprobada", "El servicio está contratado. Sigue el avance en el seguimiento."],
+        "Rechazada": ["bi-x-circle text-danger", "Cotización rechazada", "Rechazaste esta cotización. Si aún necesitas el servicio, puedes buscar otro prestador."],
+        "Vencida": ["bi-clock-history", "Cotización vencida", "Pasó el plazo para responder. Puedes crear una solicitud nueva."]
+      };
+      const [icono, titulo, texto] = textos[cot.estado] || ["bi-info-circle", "Cotización " + cot.estado, ""];
+      return `
+        <section class="tarjeta columna-fija" aria-labelledby="tituloDecision">
+          <h2 class="h5 fw-bold" id="tituloDecision"><i class="bi ${icono}" aria-hidden="true"></i> ${esc(titulo)}</h2>
+          <p class="small mb-2">${esc(texto)} La solicitud está ${UI.badgeEstado(s.estado)}.</p>
+          ${cot.estado === "Aprobada" ? pago : ""}
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            ${botonSeguimiento(s, true)}
+            ${cot.estado !== "Aprobada" ? '<a class="btn btn-outline-primary btn-sm" href="busqueda.html">Buscar otro prestador</a>' : ""}
+          </div>
+        </section>`;
+    }
+
+    function conectar(s, cot) {
+      const aprobar = document.getElementById("btnAprobar");
+      if (!aprobar) return;
+      const modal = new bootstrap.Modal(document.getElementById("modalRechazo"));
+
+      aprobar.addEventListener("click", () => {
+        UI.bloquearBoton(aprobar, "Aprobando…");
+        const r = OY.aprobarCotizacion(s.id);
+        if (!r.ok) { UI.liberarBoton(aprobar); UI.alerta("mensaje", "danger", r.error); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+        UI.alerta("mensaje", "success", "¡Listo! Aprobaste la cotización y el servicio quedó Confirmado. El prestador recibe el aviso (Simulado).");
+        pintar(); window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      document.getElementById("btnRechazar").addEventListener("click", () => {
+        document.getElementById("avisoRechazo").innerHTML = s.modalidad === "Diagnóstico" && cot.costoVisita > 0
+          ? `Como ya se hizo la visita de diagnóstico, se cobra solo la visita: <strong>${OY.formatoQ(cot.costoVisita)}</strong> (RN05).`
+          : "La solicitud quedará Rechazada y no se cobrará nada.";
+        modal.show();
+      });
+
+      const form = document.getElementById("formRechazo");
+      const motivo = document.getElementById("motivoRechazo");
+      form.addEventListener("submit", ev => {
+        ev.preventDefault();
+        if (!motivo.value.trim()) { motivo.classList.add("is-invalid"); motivo.focus(); return; }
+        motivo.classList.remove("is-invalid");
+        const boton = document.getElementById("btnConfirmarRechazo");
+        UI.bloquearBoton(boton, "Rechazando…");
+        const r = OY.rechazarCotizacion(s.id, motivo.value.trim());
+        UI.liberarBoton(boton);
+        modal.hide();
+        if (!r.ok) { UI.alerta("mensaje", "danger", r.error); return; }
+        UI.alerta("mensaje", "info", "Rechazaste la cotización. El motivo quedó en el historial de la solicitud.");
+        pintar(); window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      motivo.addEventListener("input", () => motivo.classList.remove("is-invalid"));
+    }
   </script>
 </body>
 </html>
