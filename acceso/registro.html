@@ -153,7 +153,9 @@
         return;
       }
       OY.iniciarSesion(datos.correo, datos.contrasena);
-      window.location.href = "../" + OY.inicioPorRol(datos.rol);
+      // Si venía de una solicitud, regresar ahí (solo rutas internas validadas)
+      const volver = OY.rutaInternaSegura(new URLSearchParams(window.location.search).get("volver"));
+      window.location.href = "../" + (volver && datos.rol === "cliente" ? volver : OY.inicioPorRol(datos.rol));
     });
   </script>
 </body>

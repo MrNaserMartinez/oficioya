@@ -223,12 +223,36 @@ const OY = (function () {
     }[rol] || "index.html";
   }
 
+  /** Acepta solo rutas internas del sitio, relativas a la raíz:
+      "cliente/solicitud.html?prestador=PR02". Rechaza "https://…",
+      "//otro-sitio", "javascript:", "../" y rutas absolutas. */
+  function rutaInternaSegura(ruta) {
+    if (!ruta || typeof ruta !== "string" || ruta.length > 300) return null;
+    if (!/^[a-zA-Z0-9_\-]+(\/[a-zA-Z0-9_\-]+)*\.html(\?[a-zA-Z0-9_\-=&%.]*)?$/.test(ruta)) return null;
+    if (ruta.startsWith("acceso/")) return null; // no volver al login ni al registro
+    return ruta;
+  }
+
+  /** Ruta de la página actual relativa a la raíz del proyecto. */
+  function rutaActual() {
+    const base = document.body.dataset.base || "";
+    const niveles = (base.match(/\.\.\//g) || []).length;
+    const partes = window.location.pathname.split("/").filter(Boolean);
+    const ruta = partes.slice(-(niveles + 1)).join("/") || "index.html";
+    return ruta + window.location.search;
+  }
+
   /** Úsenla al inicio de cada pantalla protegida.
-      roles: ["cliente"] etc. Redirige al login si no cumple. */
+      roles: ["cliente"] etc. Si no hay sesión, manda al login y
+      guarda la página actual para regresar después de ingresar. */
   function requerirRol(roles) {
     const u = usuarioActual();
     const base = document.body.dataset.base || "";
-    if (!u || !u.rol) { window.location.href = base + "acceso/login.html"; return null; }
+    if (!u || !u.rol) {
+      const volver = rutaInternaSegura(rutaActual());
+      window.location.href = base + "acceso/login.html" + (volver ? "?volver=" + encodeURIComponent(volver) : "");
+      return null;
+    }
     if (roles && !roles.includes(u.rol)) { window.location.href = base + inicioPorRol(u.rol); return null; }
     return u;
   }
@@ -718,7 +742,7 @@ const OY = (function () {
     obtener, listar, nombreOficio, nombreEspecialidad, nombreZona,
     nombreCompleto, nombrePrestador, personaDeCuenta, prestadorDeCuenta, calificacionPromedio,
     // sesión
-    iniciarSesion, elegirRol, usuarioActual, cerrarSesion, requerirRol, inicioPorRol,
+    iniciarSesion, elegirRol, usuarioActual, cerrarSesion, requerirRol, inicioPorRol, rutaInternaSegura,
     registrarCuenta, solicitarRecuperacion, restablecerContrasena,
     // búsqueda y solicitudes
     buscarPrestadores, estaDisponibleAhora,

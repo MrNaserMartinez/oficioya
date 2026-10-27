@@ -92,8 +92,16 @@
       this.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
     });
 
+    /* Si venía de una página protegida (ej. solicitud con prestador elegido),
+       regresar ahí. Solo se aceptan rutas internas validadas. */
+    const volver = OY.rutaInternaSegura(new URLSearchParams(window.location.search).get("volver"));
+    if (volver) {
+      UI.alerta("mensaje", "info", "Ingresa para continuar con tu solicitud. Te regresaremos a donde estabas.");
+      document.querySelector('a[href="registro.html"]').href = "registro.html?volver=" + encodeURIComponent(volver);
+    }
+
     function irAInicio(rol) {
-      window.location.href = "../" + OY.inicioPorRol(rol);
+      window.location.href = "../" + (volver || OY.inicioPorRol(rol));
     }
 
     document.getElementById("formLogin").addEventListener("submit", function (e) {
