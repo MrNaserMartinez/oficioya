@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recuperar cuenta | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="pantalla-acceso">
+    <div class="marca-acceso">
+      <i class="bi bi-key" aria-hidden="true"></i>
+      <h1 class="h3 fw-bold mt-2 mb-1">Recuperar cuenta</h1>
+      <p class="texto-suave mb-0">Te enviaremos un código a tu correo.</p>
+    </div>
+
+    <div id="mensaje"></div>
+
+    <!-- Paso 1 -->
+    <section class="tarjeta" id="paso1">
+      <form id="formCorreo" novalidate>
+        <label for="correo" class="form-label">Correo de tu cuenta</label>
+        <input type="email" class="form-control mb-3" id="correo" autocomplete="email" required>
+        <button type="submit" class="btn btn-primary w-100" id="btnEnviar">Enviar código</button>
+      </form>
+    </section>
+
+    <!-- Paso 2 -->
+    <section class="tarjeta d-none" id="paso2">
+      <div id="correoSimulado" class="mb-3"></div>
+      <form id="formNueva" novalidate>
+        <div class="mb-3">
+          <label for="codigo" class="form-label">Código de 6 dígitos</label>
+          <input type="text" class="form-control" id="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>
+        </div>
+        <div class="mb-3">
+          <label for="nueva" class="form-label">Nueva contraseña</label>
+          <input type="password" class="form-control" id="nueva" minlength="6" autocomplete="new-password" required>
+          <div class="form-text">Mínimo 6 caracteres.</div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="btnCambiar">Cambiar contraseña</button>
+      </form>
+    </section>
+
+    <p class="text-center small mt-3"><a href="login.html"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a ingresar</a></p>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    UI.iniciarPagina();
+    let correoUsado = "";
+
+    document.getElementById("formCorreo").addEventListener("submit", function (e) {
+      e.preventDefault();
+      correoUsado = document.getElementById("correo").value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(correoUsado)) {
+        UI.alerta("mensaje", "warning", "Escribe un correo válido.");
+        return;
+      }
+      const r = OY.solicitarRecuperacion(correoUsado);
+      document.getElementById("mensaje").innerHTML = "";
+      document.getElementById("paso1").classList.add("d-none");
+      document.getElementById("paso2").classList.remove("d-none");
+
+      // Por privacidad, el mensaje es el mismo exista o no la cuenta.
+      const caja = document.getElementById("correoSimulado");
+      caja.innerHTML = `<p class="small mb-2">Si el correo está registrado, recibirás un código válido por 15 minutos.</p>` +
+        (r.dato.codigo
+          ? `<div class="p-2 rounded border bg-light small">${UI.etiquetaSimulado("correo enviado")}<br>Tu código es <strong class="fs-5">${r.dato.codigo}</strong></div>`
+          : `<div class="p-2 rounded border bg-light small">${UI.etiquetaSimulado("no se envió nada porque el correo no existe")}</div>`);
+      document.getElementById("codigo").focus();
+    });
+
+    document.getElementById("formNueva").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const boton = document.getElementById("btnCambiar");
+      UI.bloquearBoton(boton);
+      const r = OY.restablecerContrasena(correoUsado,
+        document.getElementById("codigo").value, document.getElementById("nueva").value);
+      UI.liberarBoton(boton);
+      if (!r.ok) { UI.alerta("mensaje", "danger", r.error); return; }
+      document.getElementById("paso2").classList.add("d-none");
+      document.getElementById("mensaje").innerHTML =
+        `<div class="alert alert-success"><i class="bi bi-check-circle" aria-hidden="true"></i> Contraseña actualizada.
+         <a href="login.html" class="alert-link">Ingresar ahora</a></div>`;
+    });
+  </script>
+</body>
+</html>

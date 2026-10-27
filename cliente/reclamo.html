@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Presentar reclamo | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Presentar reclamo</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
+         Requisito(s): RF11
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 5</strong> · RF11</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Leer ?solicitud=</li>
+        <li>Motivo (Cobro, Calidad, Puntualidad, Conducta, Otro), descripción y evidencia (nombres de archivo, SIMULADO)</li>
+        <li>Guardar con OY.crearReclamo; se ve en el panel de Soporte</li>
+        <li>Explicar los siguientes pasos y plazos de respuesta</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.crearReclamo(id, motivo, descripcion, evidencia)</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">Crear un reclamo y verlo entrando como soporte@demo.com.</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina({ roles: ["cliente","prestador"] });
+    // Tu código aquí.
+  </script>
+</body>
+</html>

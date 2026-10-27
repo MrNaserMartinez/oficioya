@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preparar cotización | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Preparar cotización</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 4
+         Requisito(s): RF08
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 4</strong> · RF08</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Leer ?solicitud= de la URL; mostrar resumen de la solicitud</li>
+        <li>Tabla editable de rubros: tipo (Mano de obra / Material / Cargo), descripción, cantidad, precio unitario; agregar y quitar filas</li>
+        <li>Costo de visita, precio Estimado o Definitivo, vigencia en horas</li>
+        <li>Subtotales por tipo y total en vivo (OY.totalesCotizacion)</li>
+        <li>Enviar → la solicitud pasa sola a "Pendiente de aprobación"</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.guardarCotizacion(solicitudId, { detalles, costoVisita, tipoPrecio, vigenciaHoras })</code></li>
+        <li><code>OY.totalesCotizacion(cot)</code></li>
+        <li><code>OY.formatoQ(monto)</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">Como electricista@demo.com (rol prestador): primero acepta una solicitud en la bandeja para que esté "En evaluación".</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina({ roles: ["prestador"] });
+    // Tu código aquí.
+  </script>
+</body>
+</html>

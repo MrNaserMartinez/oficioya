@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inicio y selección de oficio | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body data-base="">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Inicio y selección de oficio</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
+         Requisito(s): RF04
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 2</strong> · RF04</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Mensaje de bienvenida y explicación corta de la plataforma</li>
+        <li>Tarjetas de los oficios activos (OY.listar("oficios", o => o.activo)) con su ícono y modalidad</li>
+        <li>Al tocar un oficio → cliente/busqueda.html?oficio=OF01</li>
+        <li>Botón grande "Pinchazo ahora" para la modalidad inmediata</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.listar("oficios", filtro)</code></li>
+        <li><code>OY.usuarioActual()</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">Visible sin iniciar sesión.</p>
+    </section>
+  </main>
+
+  <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/datos.js"></script>
+  <script src="js/estado.js"></script>
+  <script src="js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina();
+    // Tu código aquí.
+  </script>
+</body>
+</html>

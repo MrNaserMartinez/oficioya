@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sin prestadores disponibles | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Sin prestadores disponibles</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
+         Requisito(s): RF04 (excepción)
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 2</strong> · RF04 (excepción)</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Explicar que no hay prestadores para ese oficio/zona/horario</li>
+        <li>Opciones: cambiar zona, quitar "disponible ahora", programar para otra fecha, volver a buscar</li>
+        <li>Esta pantalla se usa en la DEMO de excepción</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>UI.iniciarPagina()</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">Herrero + "disponible ahora" no devuelve a nadie.</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina();
+    // Tu código aquí.
+  </script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel administrativo | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3" id="tituloPanel">Panel administrativo</h1>
+    <div id="mensaje"></div>
+
+    <ul class="nav nav-tabs mb-3" role="tablist" id="pestanas">
+      <li class="nav-item solo-admin" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabResumen" type="button" role="tab"><i class="bi bi-graph-up" aria-hidden="true"></i> Resumen</button>
+      </li>
+      <li class="nav-item solo-admin" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabOficios" type="button" role="tab"><i class="bi bi-tags" aria-hidden="true"></i> Oficios</button>
+      </li>
+      <li class="nav-item solo-admin" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCuentas" type="button" role="tab"><i class="bi bi-people" aria-hidden="true"></i> Cuentas</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabReclamos" type="button" role="tab" id="btnTabReclamos"><i class="bi bi-life-preserver" aria-hidden="true"></i> Reclamos</button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+
+      <!-- ============ RESUMEN ============ -->
+      <section class="tab-pane fade show active" id="tabResumen" role="tabpanel">
+        <div class="row g-3 mb-3" id="indicadores"></div>
+        <div class="tarjeta">
+          <h2 class="h6 fw-bold">Solicitudes por estado</h2>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th scope="col">Estado</th><th scope="col" class="text-end">Cantidad</th></tr></thead>
+              <tbody id="tablaEstados"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ OFICIOS ============ -->
+      <section class="tab-pane fade" id="tabOficios" role="tabpanel">
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div id="listaOficios" class="d-grid gap-3"></div>
+          </div>
+          <div class="col-lg-4">
+            <form class="tarjeta mb-3" id="formOficio" novalidate>
+              <h2 class="h6 fw-bold">Nuevo oficio</h2>
+              <label for="nuevoOficio" class="form-label small">Nombre</label>
+              <input class="form-control mb-2" id="nuevoOficio" placeholder="Ej. Fontanería">
+              <label for="nuevaModalidad" class="form-label small">Modalidad principal</label>
+              <select class="form-select mb-3" id="nuevaModalidad"></select>
+              <button class="btn btn-primary w-100" type="submit"><i class="bi bi-plus-lg" aria-hidden="true"></i> Agregar oficio</button>
+              <p class="small texto-suave mt-2 mb-0">El nuevo oficio aparece automáticamente en el registro y la búsqueda, sin cambiar el sistema.</p>
+            </form>
+            <form class="tarjeta" id="formEspecialidad" novalidate>
+              <h2 class="h6 fw-bold">Nueva especialidad</h2>
+              <label for="espOficio" class="form-label small">Oficio</label>
+              <select class="form-select mb-2" id="espOficio"></select>
+              <label for="espNombre" class="form-label small">Nombre</label>
+              <input class="form-control mb-3" id="espNombre" placeholder="Ej. Revisión de tablero">
+              <button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-plus-lg" aria-hidden="true"></i> Agregar especialidad</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CUENTAS ============ -->
+      <section class="tab-pane fade" id="tabCuentas" role="tabpanel">
+        <div class="tarjeta">
+          <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Cuentas registradas</h2>
+            <label class="form-check-label small d-flex align-items-center gap-2">
+              <input type="checkbox" class="form-check-input mt-0" id="soloPendientes"> Solo prestadores pendientes de verificar
+            </label>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr><th scope="col">Persona</th><th scope="col">Correo</th><th scope="col">Roles</th><th scope="col">Estado</th><th scope="col">Verificación</th><th scope="col" class="text-end">Acciones</th></tr>
+              </thead>
+              <tbody id="tablaCuentas"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RECLAMOS ============ -->
+      <section class="tab-pane fade" id="tabReclamos" role="tabpanel">
+        <div id="listaReclamos" class="d-grid gap-3"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal: verificar prestador -->
+  <div class="modal fade" id="modalVerificar" tabindex="-1" aria-labelledby="tituloVerificar" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formVerificar">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloVerificar">Verificar prestador</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2" id="verificarNombre"></p>
+          <p class="small texto-suave">Marca lo que <strong>sí</strong> revisaste. El perfil mostrará exactamente esta lista: "verificado" no es garantía de calidad ni de conducta.</p>
+          <div id="checksRevision"></div>
+          <div id="mensajeVerificar" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger me-auto" id="btnRechazarVerif">Rechazar</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Marcar como verificado</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: resolver reclamo -->
+  <div class="modal fade" id="modalReclamo" tabindex="-1" aria-labelledby="tituloReclamo" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formReclamo">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloReclamo">Resolver reclamo</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <label for="resolucion" class="form-label">¿Cómo se resolvió?</label>
+          <textarea class="form-control" id="resolucion" rows="3"></textarea>
+          <div id="mensajeReclamo" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar resolución</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina({ roles: ["administrador", "soporte"] });
+    const esc = UI.escapar;
+
+    if (u) {
+      /* ---------- Permisos por rol: Soporte solo ve reclamos ---------- */
+      if (u.rol === "soporte") {
+        document.getElementById("tituloPanel").textContent = "Atención de reclamos";
+        document.querySelectorAll(".solo-admin").forEach(el => el.remove());
+        document.getElementById("tabResumen").remove();
+        document.getElementById("tabOficios").remove();
+        document.getElementById("tabCuentas").remove();
+        mostrarPestana("btnTabReclamos");
+      } else if (window.location.hash === "#reclamos") {
+        mostrarPestana("btnTabReclamos");
+      }
+
+      if (u.rol === "administrador") {
+        pintarResumen();
+        pintarOficios();
+        pintarCuentas();
+        prepararFormularios();
+      }
+      pintarReclamos();
+    }
+
+    function mostrarPestana(idBoton) {
+      const b = document.getElementById(idBoton);
+      if (b) bootstrap.Tab.getOrCreateInstance(b).show();
+    }
+
+    function avisar(r, textoOk) {
+      if (r.ok) UI.alerta("mensaje", "success", textoOk);
+      else UI.alerta("mensaje", "danger", r.error);
+      return r.ok;
+    }
+
+    /* ================= RESUMEN ================= */
+    function pintarResumen() {
+      const ind = OY.indicadores();
+      const tarjetas = [
+        { titulo: "Solicitudes atendidas", valor: ind.tasaAtencion + " %",              formula: "Finalizadas ÷ total de solicitudes × 100", icono: "bi-check-all" },
+        { titulo: "Tiempo de aceptación",  valor: ind.tiempoPromedioAceptacionMin + " min", formula: "Promedio de (En evaluación − Solicitada)", icono: "bi-stopwatch" },
+        { titulo: "Cancelaciones",         valor: ind.tasaCancelacion + " %",           formula: "Canceladas ÷ total de solicitudes × 100", icono: "bi-slash-circle" },
+        { titulo: "Reclamos por 100 servicios", valor: ind.reclamosPor100,              formula: `Reclamos ÷ finalizadas × 100 · ${ind.reclamosAbiertos} abiertos`, icono: "bi-life-preserver" }
+      ];
+      document.getElementById("indicadores").innerHTML = tarjetas.map(t => `
+        <div class="col-sm-6 col-lg-3">
+          <div class="tarjeta indicador h-100">
+            <div class="small texto-suave"><i class="bi ${t.icono}" aria-hidden="true"></i> ${t.titulo}</div>
+            <div class="valor my-1">${t.valor}</div>
+            <div class="formula">${t.formula}</div>
+          </div>
+        </div>`).join("");
+
+      document.getElementById("tablaEstados").innerHTML = OY.ESTADOS.map(e =>
+        `<tr><td>${UI.badgeEstado(e)}</td><td class="text-end fw-semibold">${ind.porEstado[e]}</td></tr>`).join("") +
+        `<tr class="table-light"><td><strong>Total</strong></td><td class="text-end fw-bold">${ind.total}</td></tr>`;
+    }
+
+    /* ================= OFICIOS ================= */
+    function pintarOficios() {
+      const oficios = OY.listar("oficios");
+      document.getElementById("listaOficios").innerHTML = oficios.map(o => {
+        const esp = OY.listar("especialidades", e => e.oficioId === o.id);
+        return `
+        <article class="tarjeta${o.activo ? "" : " opacity-75"}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h6 fw-bold mb-1"><i class="bi ${esc(o.icono)}" aria-hidden="true"></i> ${esc(o.nombre)}</h2>
+              <span class="badge text-bg-light border">${esc(o.modalidad)}</span>
+              <span class="badge ${o.activo ? "text-bg-success" : "text-bg-secondary"}">${o.activo ? "Activo" : "Inactivo"}</span>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" data-alternar="oficios" data-id="${o.id}">
+              ${o.activo ? '<i class="bi bi-pause-circle" aria-hidden="true"></i> Desactivar' : '<i class="bi bi-play-circle" aria-hidden="true"></i> Activar'}
+            </button>
+          </div>
+          <ul class="list-group list-group-flush mt-2">
+            ${esp.length ? esp.map(e => `
+              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span class="${e.activo ? "" : "text-decoration-line-through texto-suave"}">${esc(e.nombre)}</span>
+                <button class="btn btn-sm btn-link" data-alternar="especialidades" data-id="${e.id}">${e.activo ? "Desactivar" : "Activar"}</button>
+              </li>`).join("") : '<li class="list-group-item px-0 texto-suave small">Sin especialidades.</li>'}
+          </ul>
+        </article>`;
+      }).join("");
+
+      document.querySelectorAll("[data-alternar]").forEach(b => b.addEventListener("click", () => {
+        const r = OY.alternarActivo(b.dataset.alternar, b.dataset.id);
+        if (avisar(r, "Cambio guardado.")) pintarOficios();
+      }));
+
+      document.getElementById("espOficio").innerHTML = oficios.map(o => `<option value="${o.id}">${esc(o.nombre)}</option>`).join("");
+    }
+
+    function prepararFormularios() {
+      document.getElementById("nuevaModalidad").innerHTML =
+        OY.listar("modalidades").map(m => `<option>${esc(m)}</option>`).join("");
+
+      document.getElementById("formOficio").addEventListener("submit", e => {
+        e.preventDefault();
+        const r = OY.crearOficio(document.getElementById("nuevoOficio").value, document.getElementById("nuevaModalidad").value);
+        if (avisar(r, `Oficio "${r.ok ? r.dato.nombre : ""}" agregado.`)) {
+          e.target.reset(); pintarOficios();
+        }
+      });
+
+      document.getElementById("formEspecialidad").addEventListener("submit", e => {
+        e.preventDefault();
+        const r = OY.crearEspecialidad(document.getElementById("espOficio").value, document.getElementById("espNombre").value);
+        if (avisar(r, "Especialidad agregada.")) {
+          document.getElementById("espNombre").value = ""; pintarOficios();
+        }
+      });
+
+      document.getElementById("soloPendientes").addEventListener("change", pintarCuentas);
+    }
+
+    /* ================= CUENTAS ================= */
+    const REVISIONES = ["Identidad (DPI) confirmada", "Teléfono confirmado", "Referencias de trabajos anteriores", "Constancia de antecedentes laborales"];
+    let prestadorEnRevision = null;
+
+    function pintarCuentas() {
+      const soloPend = document.getElementById("soloPendientes").checked;
+      const filas = OY.listar("cuentas").map(c => {
+        const p = OY.obtener("personas", c.personaId);
+        const pr = OY.prestadorDeCuenta(c.id);
+        return { c, p, pr };
+      }).filter(x => !soloPend || (x.pr && x.pr.verificacion.estado === "Pendiente"));
+
+      document.getElementById("tablaCuentas").innerHTML = filas.length ? filas.map(({ c, p, pr }) => {
+        const verif = pr
+          ? `<span class="badge ${pr.verificacion.estado === "Verificado" ? "text-bg-success" : pr.verificacion.estado === "Rechazado" ? "text-bg-danger" : "text-bg-warning"}">
+               <i class="bi ${pr.verificacion.estado === "Verificado" ? "bi-patch-check" : pr.verificacion.estado === "Rechazado" ? "bi-x-circle" : "bi-hourglass"}" aria-hidden="true"></i>
+               ${pr.verificacion.estado}</span>
+             ${pr.verificacion.revisado.length ? `<div class="small texto-suave">${pr.verificacion.revisado.map(esc).join(" · ")}</div>` : ""}`
+          : '<span class="texto-suave small">—</span>';
+        const esPropia = c.id === u.cuenta.id;
+        return `<tr>
+          <td>${esc(p.nombres)} ${esc(p.apellidos)}</td>
+          <td class="small">${esc(c.correo)}</td>
+          <td class="small">${c.roles.map(r => UI.ETIQUETA_ROL[r]).join(", ")}</td>
+          <td><span class="badge ${c.estado === "Activa" ? "text-bg-success" : "text-bg-secondary"}">${c.estado}</span></td>
+          <td>${verif}</td>
+          <td class="text-end text-nowrap">
+            ${pr ? `<button class="btn btn-sm btn-outline-primary" data-verificar="${pr.id}"><i class="bi bi-shield-check" aria-hidden="true"></i> Verificar</button>` : ""}
+            ${esPropia ? "" : `<button class="btn btn-sm ${c.estado === "Activa" ? "btn-outline-danger" : "btn-outline-success"}" data-cuenta="${c.id}" data-nuevo="${c.estado === "Activa" ? "Suspendida" : "Activa"}">
+              ${c.estado === "Activa" ? "Suspender" : "Reactivar"}</button>`}
+          </td>
+        </tr>`;
+      }).join("") : '<tr><td colspan="6" class="estado-vacio py-4">No hay prestadores pendientes de verificar.</td></tr>';
+
+      document.querySelectorAll("[data-cuenta]").forEach(b => b.addEventListener("click", () => {
+        const accion = b.dataset.nuevo === "Suspendida" ? "suspender" : "reactivar";
+        if (!confirm(`¿Seguro que quieres ${accion} esta cuenta?`)) return;
+        const r = OY.cambiarEstadoCuenta(b.dataset.cuenta, b.dataset.nuevo);
+        if (avisar(r, "Estado de la cuenta actualizado.")) pintarCuentas();
+      }));
+
+      document.querySelectorAll("[data-verificar]").forEach(b => b.addEventListener("click", () => abrirVerificacion(b.dataset.verificar)));
+    }
+
+    function abrirVerificacion(prestadorId) {
+      prestadorEnRevision = OY.obtener("prestadores", prestadorId);
+      document.getElementById("verificarNombre").innerHTML =
+        `<strong>${esc(OY.nombrePrestador(prestadorId))}</strong> · ${prestadorEnRevision.oficios.map(OY.nombreOficio).map(esc).join(", ")}`;
+      document.getElementById("checksRevision").innerHTML = REVISIONES.map((r, i) => `
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="rev${i}" value="${esc(r)}" ${prestadorEnRevision.verificacion.revisado.includes(r) ? "checked" : ""}>
+          <label class="form-check-label" for="rev${i}">${esc(r)}</label>
+        </div>`).join("");
+      document.getElementById("mensajeVerificar").innerHTML = "";
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("modalVerificar")).show();
+    }
+
+    function guardarVerificacion(estado) {
+      const revisado = [...document.querySelectorAll("#checksRevision input:checked")].map(i => i.value);
+      const r = OY.verificarPrestador(prestadorEnRevision.id, estado, revisado);
+      if (!r.ok) { UI.alerta("mensajeVerificar", "danger", r.error); return; }
+      bootstrap.Modal.getInstance(document.getElementById("modalVerificar")).hide();
+      UI.alerta("mensaje", "success", `Prestador marcado como ${estado.toLowerCase()}.`);
+      pintarCuentas();
+    }
+
+    document.getElementById("formVerificar").addEventListener("submit", e => { e.preventDefault(); guardarVerificacion("Verificado"); });
+    document.getElementById("btnRechazarVerif").addEventListener("click", () => {
+      if (confirm("¿Rechazar la verificación? El prestador dejará de aparecer en las búsquedas.")) guardarVerificacion("Rechazado");
+    });
+
+    /* ================= RECLAMOS ================= */
+    let reclamoEnResolucion = null;
+
+    function pintarReclamos() {
+      const lista = OY.listar("reclamos").sort((a, b) => b.fecha.localeCompare(a.fecha));
+      const cont = document.getElementById("listaReclamos");
+      if (!lista.length) {
+        cont.innerHTML = '<div class="tarjeta estado-vacio"><i class="bi bi-emoji-smile" aria-hidden="true"></i>No hay reclamos registrados.</div>';
+        return;
+      }
+      const colores = { "Abierto": "text-bg-danger", "En revisión": "text-bg-warning", "Resuelto": "text-bg-success" };
+      cont.innerHTML = lista.map(r => {
+        const s = OY.obtener("solicitudes", r.solicitudId);
+        return `
+        <article class="tarjeta">
+          <div class="d-flex flex-wrap justify-content-between gap-2">
+            <div>
+              <h2 class="h6 fw-bold mb-1">${esc(r.id)} · ${esc(r.motivo)}</h2>
+              <div class="small texto-suave">
+                Solicitud ${esc(r.solicitudId)} (${esc(OY.nombreOficio(s.oficioId))}) · presentado por ${esc(OY.nombreCompleto(r.cuentaId))} · ${OY.formatoFecha(r.fecha)}
+              </div>
+            </div>
+            <span class="badge ${colores[r.estado]} align-self-start">${esc(r.estado)}</span>
+          </div>
+          <p class="mt-2 mb-2">${esc(r.descripcion)}</p>
+          <div class="small mb-2">Estado de la solicitud: ${UI.badgeEstado(s.estado)}</div>
+          ${r.resolucion ? `<div class="alert alert-success small py-2 mb-2"><strong>Resolución:</strong> ${esc(r.resolucion)}</div>` : ""}
+          ${r.estado !== "Resuelto" ? `
+            <div class="d-flex gap-2">
+              ${r.estado === "Abierto" ? `<button class="btn btn-sm btn-outline-primary" data-revisar="${r.id}">Tomar en revisión</button>` : ""}
+              <button class="btn btn-sm btn-primary" data-resolver="${r.id}">Resolver</button>
+            </div>` : ""}
+        </article>`;
+      }).join("");
+
+      cont.querySelectorAll("[data-revisar]").forEach(b => b.addEventListener("click", () => {
+        if (avisar(OY.atenderReclamo(b.dataset.revisar, "En revisión"), "Reclamo en revisión.")) pintarReclamos();
+      }));
+      cont.querySelectorAll("[data-resolver]").forEach(b => b.addEventListener("click", () => {
+        reclamoEnResolucion = b.dataset.resolver;
+        document.getElementById("resolucion").value = "";
+        document.getElementById("mensajeReclamo").innerHTML = "";
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("modalReclamo")).show();
+      }));
+    }
+
+    document.getElementById("formReclamo").addEventListener("submit", e => {
+      e.preventDefault();
+      const r = OY.atenderReclamo(reclamoEnResolucion, "Resuelto", document.getElementById("resolucion").value);
+      if (!r.ok) { UI.alerta("mensajeReclamo", "danger", r.error); return; }
+      bootstrap.Modal.getInstance(document.getElementById("modalReclamo")).hide();
+      UI.alerta("mensaje", "success", "Reclamo resuelto.");
+      pintarReclamos();
+      if (u.rol === "administrador") pintarResumen();
+    });
+  </script>
+</body>
+</html>

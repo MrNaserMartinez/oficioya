@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Búsqueda y resultados | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Búsqueda y resultados</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
+         Requisito(s): RF04, RF05
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 2</strong> · RF04, RF05</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Filtros: oficio, zona y "disponible ahora"; leer ?oficio= de la URL</li>
+        <li>Tarjetas de resultado: nombre, oficio, zonas, calificación (UI.estrellas), sello de verificación y botón "Ver perfil" → perfil-prestador.html?id=PR01</li>
+        <li>Mapa con UI.etiquetaSimulado("mapa")</li>
+        <li>Si no hay resultados → mostrar estado vacío o enlazar a ../estados/sin-resultados.html</li>
+        <li>Flujo inmediato de pinchazos: con "disponible ahora" activo, mostrar quién puede ir y botón "Pedir ahora" → solicitud.html?prestador=PR02&amp;oficio=OF01&amp;inmediata=1</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.buscarPrestadores({ oficioId, zonaId, disponibleAhora })</code></li>
+        <li><code>OY.listar("zonas")</code></li>
+        <li><code>UI.estrellas(n)</code></li>
+        <li><code>UI.etiquetaSimulado("mapa")</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">Pinchazos + Sector Centro + disponible ahora → Rosa (si la hora está entre 06:00 y 20:00). Electricista + Sector Poniente → Luis.</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina();
+    // Tu código aquí.
+  </script>
+</body>
+</html>

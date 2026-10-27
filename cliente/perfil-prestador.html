@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perfil del prestador | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Perfil del prestador</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 3
+         Requisito(s): RF02, RF05
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 3</strong> · RF02, RF05</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Leer ?id=PR01 de la URL</li>
+        <li>Mostrar nombre, oficios, especialidades, experiencia, zonas, días y horario, costo de visita</li>
+        <li>Sello de verificación mostrando QUÉ se revisó (prestador.verificacion.revisado), o "Pendiente de verificación"</li>
+        <li>Calificaciones y comentarios (OY.listar("calificaciones", c => c.prestadorId === id))</li>
+        <li>Botón "Solicitar servicio" → solicitud.html?prestador=PR01&amp;oficio=OF02 (si no hay sesión, mandar al login)</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.obtener("prestadores", id)</code></li>
+        <li><code>OY.nombrePrestador(id)</code></li>
+        <li><code>OY.calificacionPromedio(id)</code></li>
+        <li><code>OY.nombreZona / OY.nombreOficio / OY.nombreEspecialidad</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">PR01 (verificado, con calificación), PR03 (pendiente, sin calificaciones).</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina();
+    // Tu código aquí.
+  </script>
+</body>
+</html>

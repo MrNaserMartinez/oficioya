@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bandeja del prestador | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Bandeja del prestador</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
+         Requisito(s): RF07, RF09
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 5</strong> · RF07, RF09</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Lista de OY.solicitudesDelUsuario() agrupada: Nuevas, En curso, Cerradas</li>
+        <li>En "Solicitada": Aceptar (→ "En evaluación") o Rechazar con motivo; mostrar cuánto falta para que venza (fechaLimite)</li>
+        <li>Desde "En evaluación" → botón a cotizacion.html?solicitud=</li>
+        <li>Confirmadas: marcar "En ejecución" y luego "Finalizada"</li>
+        <li>La dirección exacta solo se muestra cuando está Confirmada (privacidad)</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.solicitudesDelUsuario()</code></li>
+        <li><code>OY.accionesPermitidas(id)</code></li>
+        <li><code>OY.cambiarEstado(id, nuevo, motivo)</code></li>
+        <li><code>UI.badgeEstado(estado)</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">herrero@demo.com tiene SOL-0005 nueva. electricista@demo.com (rol prestador) tiene varias.</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina({ roles: ["prestador"] });
+    // Tu código aquí.
+  </script>
+</body>
+</html>

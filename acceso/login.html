@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="pantalla-acceso">
+    <div class="marca-acceso">
+      <i class="bi bi-tools" aria-hidden="true"></i>
+      <h1 class="h3 fw-bold mt-2 mb-1">Ingresar</h1>
+      <p class="texto-suave mb-0">Encuentra a quién te resuelva, cerca de ti.</p>
+    </div>
+
+    <!-- Paso 1: credenciales -->
+    <section class="tarjeta" id="pasoCredenciales">
+      <div id="mensaje"></div>
+      <form id="formLogin" novalidate>
+        <div class="mb-3">
+          <label for="correo" class="form-label">Correo electrónico</label>
+          <input type="email" class="form-control" id="correo" autocomplete="username" required>
+        </div>
+        <div class="mb-3">
+          <label for="contrasena" class="form-label">Contraseña</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="contrasena" autocomplete="current-password" required>
+            <button class="btn btn-outline-secondary" type="button" id="verContrasena" aria-label="Mostrar contraseña">
+              <i class="bi bi-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="btnIngresar">Ingresar</button>
+      </form>
+      <div class="d-flex justify-content-between mt-3 small">
+        <a href="recuperar.html">¿Olvidaste tu contraseña?</a>
+        <a href="registro.html">Crear cuenta</a>
+      </div>
+    </section>
+
+    <!-- Paso 2: elegir rol (solo si la cuenta tiene varios) -->
+    <section class="tarjeta d-none" id="pasoRol">
+      <h2 class="h5 fw-bold">¿Cómo quieres entrar?</h2>
+      <p class="texto-suave small">Tu cuenta tiene más de un rol. Puedes cambiarlo después desde tu menú.</p>
+      <div class="d-grid gap-2" id="opcionesRol"></div>
+    </section>
+
+    <!-- Usuarios de prueba (guía de uso del prototipo) -->
+    <details class="tarjeta mt-3">
+      <summary class="fw-semibold">Usuarios de prueba</summary>
+      <p class="small texto-suave mt-2 mb-2">Datos ficticios. Toca uno para llenar el formulario.</p>
+      <div class="list-group list-group-flush small" id="usuariosPrueba"></div>
+    </details>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    UI.iniciarPagina();
+
+    const PRUEBA = [
+      { correo: "cliente@demo.com",      clave: "demo123",  texto: "Cliente (Ana Lucía)" },
+      { correo: "electricista@demo.com", clave: "demo123",  texto: "Electricista + cliente (Carlos), elige rol" },
+      { correo: "pinchazos@demo.com",    clave: "demo123",  texto: "Prestador de pinchazos (Rosa)" },
+      { correo: "herrero@demo.com",      clave: "demo123",  texto: "Herrero sin verificar (José)" },
+      { correo: "admin@demo.com",        clave: "admin123", texto: "Administrador" },
+      { correo: "soporte@demo.com",      clave: "demo123",  texto: "Soporte (solo reclamos)" }
+    ];
+    document.getElementById("usuariosPrueba").innerHTML = PRUEBA.map((p, i) =>
+      `<button type="button" class="list-group-item list-group-item-action" data-i="${i}">
+         <strong>${UI.escapar(p.texto)}</strong><br><span class="texto-suave">${p.correo} · ${p.clave}</span>
+       </button>`).join("");
+    document.querySelectorAll("#usuariosPrueba [data-i]").forEach(b => b.addEventListener("click", () => {
+      const p = PRUEBA[b.dataset.i];
+      document.getElementById("correo").value = p.correo;
+      document.getElementById("contrasena").value = p.clave;
+      document.getElementById("correo").focus();
+    }));
+
+    document.getElementById("verContrasena").addEventListener("click", function () {
+      const campo = document.getElementById("contrasena");
+      const mostrar = campo.type === "password";
+      campo.type = mostrar ? "text" : "password";
+      this.innerHTML = `<i class="bi ${mostrar ? "bi-eye-slash" : "bi-eye"}" aria-hidden="true"></i>`;
+      this.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+    });
+
+    function irAInicio(rol) {
+      window.location.href = "../" + OY.inicioPorRol(rol);
+    }
+
+    document.getElementById("formLogin").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const correo = document.getElementById("correo").value.trim();
+      const contrasena = document.getElementById("contrasena").value;
+      if (!correo || !contrasena) {
+        UI.alerta("mensaje", "warning", "Escribe tu correo y tu contraseña.");
+        return;
+      }
+      const boton = document.getElementById("btnIngresar");
+      UI.bloquearBoton(boton, "Ingresando…");
+      const r = OY.iniciarSesion(correo, contrasena);
+      if (!r.ok) {
+        UI.liberarBoton(boton);
+        UI.alerta("mensaje", "danger", r.error);
+        return;
+      }
+      if (r.dato.rol) { irAInicio(r.dato.rol); return; }
+
+      // Varios roles: mostrar paso 2
+      document.getElementById("pasoCredenciales").classList.add("d-none");
+      document.getElementById("pasoRol").classList.remove("d-none");
+      const iconos = { cliente: "bi-person", prestador: "bi-tools", administrador: "bi-speedometer2", soporte: "bi-life-preserver" };
+      document.getElementById("opcionesRol").innerHTML = r.dato.roles.map(rol =>
+        `<button class="btn btn-outline-primary text-start py-2" data-rol="${rol}">
+           <i class="bi ${iconos[rol]}" aria-hidden="true"></i> Entrar como <strong>${UI.ETIQUETA_ROL[rol]}</strong>
+         </button>`).join("");
+      document.querySelectorAll("[data-rol]").forEach(b => b.addEventListener("click", () => {
+        const res = OY.elegirRol(b.dataset.rol);
+        if (res.ok) irAInicio(b.dataset.rol);
+      }));
+      document.querySelector("[data-rol]").focus();
+    });
+  </script>
+</body>
+</html>

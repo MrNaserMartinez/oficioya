@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento del servicio | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="container pb-5">
+    <h1 class="titulo-pagina h3">Seguimiento del servicio</h1>
+    <div id="mensaje"></div>
+
+    <!-- =====================================================
+         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 4
+         Requisito(s): RF09, RF10, RF11
+         Borren la tarjeta de abajo cuando construyan la pantalla.
+         ===================================================== -->
+    <section class="tarjeta en-construccion">
+      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
+        <strong>Responsable: Integrante 4</strong> · RF09, RF10, RF11</p>
+      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
+      <ul>
+        <li>Leer ?solicitud=; mostrar estado actual con UI.badgeEstado</li>
+        <li>Línea de tiempo con OY.historialDe(id): fecha, quién y motivo</li>
+        <li>Botones SOLO de las acciones permitidas: OY.accionesPermitidas(id) (ej. prestador: "En ejecución", "Finalizada"; cliente: "Cancelada")</li>
+        <li>Cancelar pidiendo motivo → OY.cambiarEstado(id, "Cancelada", motivo)</li>
+        <li>Chat de la solicitud (RF10): OY.mensajesDe(id) y OY.enviarMensaje(id, texto)</li>
+        <li>Enlaces a cotización, calificar y reclamo según el estado</li>
+      </ul>
+      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
+      <ul class="small">
+        <li><code>OY.historialDe(id)</code></li>
+        <li><code>OY.accionesPermitidas(id)</code></li>
+        <li><code>OY.cambiarEstado(id, nuevoEstado, motivo)</code></li>
+        <li><code>OY.mensajesDe / OY.enviarMensaje</code></li>
+      </ul>
+      <h2 class="h6 fw-bold">Para probar</h2>
+      <p class="small mb-0">SOL-0004 (cliente2@demo.com) tiene historial y mensajes.</p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    const u = UI.iniciarPagina({ roles: ["cliente","prestador"] });
+    // Tu código aquí.
+  </script>
+</body>
+</html>

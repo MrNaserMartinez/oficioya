@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear cuenta | OficioYa Jutiapa</title>
+  <link rel="stylesheet" href="../vendor/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body data-base="../">
+  <div id="navbar"></div>
+
+  <main class="pantalla-acceso" style="max-width:560px">
+    <div class="marca-acceso">
+      <i class="bi bi-person-plus" aria-hidden="true"></i>
+      <h1 class="h3 fw-bold mt-2 mb-1">Crear cuenta</h1>
+      <p class="texto-suave mb-0">Es gratis para clientes y prestadores.</p>
+    </div>
+
+    <section class="tarjeta">
+      <div id="mensaje"></div>
+      <form id="formRegistro" novalidate>
+
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">¿Qué quieres hacer?</legend>
+          <div class="row g-2">
+            <div class="col-6">
+              <input type="radio" class="btn-check" name="rol" id="rolCliente" value="cliente" checked>
+              <label class="btn btn-outline-primary w-100 py-3" for="rolCliente">
+                <i class="bi bi-search d-block fs-4" aria-hidden="true"></i> Contratar servicios
+              </label>
+            </div>
+            <div class="col-6">
+              <input type="radio" class="btn-check" name="rol" id="rolPrestador" value="prestador">
+              <label class="btn btn-outline-primary w-100 py-3" for="rolPrestador">
+                <i class="bi bi-tools d-block fs-4" aria-hidden="true"></i> Ofrecer mi oficio
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label for="nombres" class="form-label">Nombres</label>
+            <input type="text" class="form-control" id="nombres" autocomplete="given-name" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="apellidos" class="form-label">Apellidos</label>
+            <input type="text" class="form-control" id="apellidos" autocomplete="family-name" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="telefono" class="form-label">Teléfono</label>
+            <input type="tel" class="form-control" id="telefono" placeholder="0000-0000" autocomplete="tel" required>
+          </div>
+          <div class="col-sm-6">
+            <label for="correo" class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="correo" autocomplete="email" required>
+          </div>
+          <div class="col-12">
+            <label for="contrasena" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="contrasena" autocomplete="new-password" minlength="6" required aria-describedby="ayudaClave">
+            <div id="ayudaClave" class="form-text">Mínimo 6 caracteres.</div>
+          </div>
+        </div>
+
+        <!-- Solo para prestadores -->
+        <div id="camposPrestador" class="d-none mt-3 pt-3 border-top">
+          <h2 class="h6 fw-bold mb-3"><i class="bi bi-briefcase" aria-hidden="true"></i> Tu oficio</h2>
+          <div class="row g-3">
+            <div class="col-sm-7">
+              <label for="oficio" class="form-label">Oficio principal</label>
+              <select class="form-select" id="oficio"></select>
+            </div>
+            <div class="col-sm-5">
+              <label for="experiencia" class="form-label">Años de experiencia</label>
+              <input type="number" class="form-control" id="experiencia" min="0" max="60" value="0">
+            </div>
+            <div class="col-12">
+              <span class="form-label d-block">Zonas donde atiendes</span>
+              <div id="zonas" class="d-flex flex-wrap gap-2"></div>
+            </div>
+            <div class="col-12">
+              <label for="descripcion" class="form-label">Cuéntale a los clientes qué haces <span class="texto-suave fw-normal">(opcional)</span></label>
+              <textarea class="form-control" id="descripcion" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="alert alert-info small mt-3 mb-0">
+            <i class="bi bi-shield-check" aria-hidden="true"></i>
+            Tu perfil aparecerá como <strong>Pendiente de verificación</strong> hasta que administración revise tu identidad (DPI) y teléfono.
+            La verificación indica qué se revisó; no garantiza la calidad del trabajo.
+          </div>
+        </div>
+
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="aceptaTerminos">
+          <label class="form-check-label small" for="aceptaTerminos">
+            Acepto los términos de uso y el aviso de privacidad <span class="texto-suave">(documento de ejemplo)</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-acento w-100 mt-3" id="btnRegistrar">Crear cuenta</button>
+      </form>
+      <p class="text-center small mt-3 mb-0">¿Ya tienes cuenta? <a href="login.html">Ingresar</a></p>
+    </section>
+  </main>
+
+  <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="../js/datos.js"></script>
+  <script src="../js/estado.js"></script>
+  <script src="../js/componentes.js"></script>
+  <script>
+    UI.iniciarPagina();
+
+    // Llenar oficios activos y zonas desde los datos
+    document.getElementById("oficio").innerHTML = '<option value="">Elige…</option>' +
+      OY.listar("oficios", o => o.activo).map(o => `<option value="${o.id}">${UI.escapar(o.nombre)} (${UI.escapar(o.modalidad)})</option>`).join("");
+    document.getElementById("zonas").innerHTML = OY.listar("zonas").map(z =>
+      `<input type="checkbox" class="btn-check" id="zona-${z.id}" value="${z.id}">
+       <label class="btn btn-sm btn-outline-secondary" for="zona-${z.id}">${UI.escapar(z.nombre)}</label>`).join("");
+
+    function rolElegido() { return document.querySelector('input[name="rol"]:checked').value; }
+
+    document.querySelectorAll('input[name="rol"]').forEach(r => r.addEventListener("change", () => {
+      document.getElementById("camposPrestador").classList.toggle("d-none", rolElegido() !== "prestador");
+    }));
+
+    document.getElementById("formRegistro").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!document.getElementById("aceptaTerminos").checked) {
+        UI.alerta("mensaje", "warning", "Debes aceptar los términos para crear la cuenta.");
+        return;
+      }
+      const datos = {
+        rol: rolElegido(),
+        nombres: document.getElementById("nombres").value,
+        apellidos: document.getElementById("apellidos").value,
+        telefono: document.getElementById("telefono").value,
+        correo: document.getElementById("correo").value,
+        contrasena: document.getElementById("contrasena").value,
+        oficioId: document.getElementById("oficio").value,
+        experienciaAnios: document.getElementById("experiencia").value,
+        descripcion: document.getElementById("descripcion").value,
+        zonas: [...document.querySelectorAll("#zonas input:checked")].map(i => i.value)
+      };
+      const boton = document.getElementById("btnRegistrar");
+      UI.bloquearBoton(boton, "Creando cuenta…");
+      const r = OY.registrarCuenta(datos);
+      if (!r.ok) {
+        UI.liberarBoton(boton);
+        UI.alerta("mensaje", "danger", r.error);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      OY.iniciarSesion(datos.correo, datos.contrasena);
+      window.location.href = "../" + OY.inicioPorRol(datos.rol);
+    });
+  </script>
+</body>
+</html>
