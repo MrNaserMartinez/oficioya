@@ -77,7 +77,8 @@
 
     /* Botón "Solicitar servicio" según sesión y rol */
     function pintarAccion(p, oficioId) {
-      const destino = `solicitud.html?prestador=${encodeURIComponent(p.id)}&oficio=${encodeURIComponent(oficioId)}`;
+      const zonaParam = new URLSearchParams(location.search).get("zona");
+      const destino = `solicitud.html?prestador=${encodeURIComponent(p.id)}&oficio=${encodeURIComponent(oficioId)}${zonaParam ? "&zona=" + encodeURIComponent(zonaParam) : ""}`;
       const ofi = OY.obtener("oficios", oficioId);
       const inmediata = ofi && ofi.modalidad === "Inmediata" && p.disponibleAhora;
       if (!u || !u.rol) {

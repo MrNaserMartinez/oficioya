@@ -12,30 +12,61 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Sin conexión</h1>
-    <div id="mensaje"></div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <section class="tarjeta mt-4" aria-labelledby="tituloSinConexion">
+          <div class="text-center">
+            <i class="bi bi-wifi-off display-4 text-secondary" aria-hidden="true"></i>
+            <h1 class="h3 fw-bold mt-2" id="tituloSinConexion">Estás sin conexión</h1>
+            <p class="texto-suave mb-3">No pudimos comunicarnos con el servicio. Revisa tu internet y vuelve a intentarlo.</p>
+            <div class="alert alert-warning" id="estadoConexion" role="status" aria-live="polite">
+              <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+              Ahora mismo no hay conexión. La pantalla seguirá disponible porque los estilos e íconos están guardados en el proyecto.
+            </div>
+          </div>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 5
-         Requisito(s): Conectividad
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 5</strong> · Conectividad</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Explicar que no hay internet y qué se conserva</li>
-        <li>Botón "Reintentar" que revise navigator.onLine</li>
-        <li>La barra gris de "Sin conexión" ya aparece sola en todas las páginas (componentes.js)</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>navigator.onLine</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">En Chrome: F12 → Network → Offline.</p>
-    </section>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <h2 class="h6 fw-bold"><i class="bi bi-check2-circle text-success" aria-hidden="true"></i> Qué se conserva</h2>
+              <ul class="small mb-0">
+                <li>Los datos que ya guardaste en este dispositivo (<code>localStorage</code>) siguen disponibles.</li>
+                <li>Puedes seguir consultando el prototipo sin internet.</li>
+                <li>Los cambios que hagas en este navegador se guardan localmente.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h2 class="h6 fw-bold"><i class="bi bi-x-circle text-danger" aria-hidden="true"></i> Qué no puedes hacer</h2>
+              <ul class="small mb-0">
+                <li>Enviar información a un servidor: en este prototipo todo vive en el navegador.</li>
+                <li>Los formularios que no enviaste no se guardan automáticamente.</li>
+                <li>Mapas, pagos y notificaciones son simulados y pueden no actualizarse.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="alert alert-info small mt-3 mb-0" role="note">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            En la versión real, las acciones que cambian datos requieren conexión con el servidor. En este prototipo se guardan en el almacenamiento local del navegador para poder demostrar el flujo sin internet.
+          </div>
+
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <button class="btn btn-primary" type="button" id="btnReintentar">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reintentar
+            </button>
+            <button class="btn btn-outline-primary" type="button" id="btnAtras">
+              <i class="bi bi-arrow-left" aria-hidden="true"></i> Página anterior
+            </button>
+            <a class="btn btn-outline-secondary" id="btnInicio" href="../index.html">Volver al inicio</a>
+          </div>
+
+          <div id="mensajeReintento" class="mt-2"></div>
+        </section>
+
+        <p class="small texto-suave text-center mt-3 mb-0">
+          Consejo para la demo: en Chrome abre <strong>F12 → Network → Offline</strong> para simular la pérdida de conexión.
+        </p>
+      </div>
+    </div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -44,7 +75,44 @@
   <script src="../js/componentes.js"></script>
   <script>
     const u = UI.iniciarPagina();
-    // Tu código aquí.
+    const inicio = u && u.rol ? "../" + OY.inicioPorRol(u.rol) : "../index.html";
+    document.getElementById("btnInicio").href = inicio;
+
+    function actualizarEstado() {
+      const caja = document.getElementById("estadoConexion");
+      if (navigator.onLine) {
+        caja.className = "alert alert-success";
+        caja.innerHTML = '<i class="bi bi-check-circle" aria-hidden="true"></i> Ya tienes conexión. Pulsa <strong>Reintentar</strong> para volver a la página anterior.';
+      } else {
+        caja.className = "alert alert-warning";
+        caja.innerHTML = '<i class="bi bi-exclamation-circle" aria-hidden="true"></i> Ahora mismo no hay conexión. La pantalla seguirá disponible porque los estilos e íconos están guardados en el proyecto.';
+      }
+    }
+
+    window.addEventListener("online", actualizarEstado);
+    window.addEventListener("offline", actualizarEstado);
+    actualizarEstado();
+
+    document.getElementById("btnReintentar").addEventListener("click", function () {
+      if (!navigator.onLine) {
+        UI.alerta("mensajeReintento", "warning", "Todavía no hay conexión. Revisa el Wi-Fi o los datos móviles e inténtalo de nuevo.");
+        return;
+      }
+      UI.alerta("mensajeReintento", "success", "Conexión restablecida. Volviendo…");
+      const boton = this;
+      UI.bloquearBoton(boton, "Volviendo…");
+      setTimeout(() => {
+        if (history.length > 1) history.back();
+        else window.location.href = inicio;
+      }, 700);
+    });
+
+    document.getElementById("btnAtras").addEventListener("click", () => {
+      if (history.length > 1) history.back();
+      else window.location.href = inicio;
+    });
+
+    window.addEventListener("pageshow", () => UI.liberarBoton(document.getElementById("btnReintentar")));
   </script>
 </body>
 </html>

@@ -1,0 +1,2 @@
+ID,Fecha,Pantalla,Caso relacionado,Descripción del defecto,Severidad,Prioridad,Estado,Responsable,Evidencia,Observaciones
+DEF-01,2026-10-26,prestador/bandeja.html,"PRU-06, PRU-10","Los botones Confirmar de los modales de motivo y confirmación quedaban deshabilitados después del primer uso, por lo que no se podía rechazar o cancelar una segunda solicitud sin recargar.",Alta,Alta,Cerrado,Mario,"Verificación de humo 26/10/2026 (23/23)","Se rehabilitan y se restaura su texto al abrir cada modal; se limpia dataset.textoOriginal."

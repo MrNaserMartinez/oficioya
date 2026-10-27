@@ -29,6 +29,7 @@
       const prestadorId = params.get("prestador");
       const oficioId = params.get("oficio");
       const pedidoInmediato = params.get("inmediata") === "1";
+      const zonaParam = params.get("zona");   // sector que manda la búsqueda (opcional)
       const contenido = document.getElementById("contenido");
 
       /* La clave se genera UNA vez, al abrir la página: si el usuario
@@ -81,7 +82,7 @@
                     <label for="zona" class="form-label">Zona del trabajo <span class="text-danger" aria-hidden="true">*</span></label>
                     <select id="zona" class="form-select" required>
                       <option value="">Elige…</option>
-                      ${zonasPrestador.map(z => `<option value="${z.id}">${UI.escapar(z.nombre)}</option>`).join("")}
+                      ${zonasPrestador.map(z => `<option value="${z.id}"${z.id === zonaParam ? " selected" : ""}>${UI.escapar(z.nombre)}</option>`).join("")}
                     </select>
                     <div class="form-text">Solo aparecen las zonas que este prestador atiende.</div>
                     <div class="invalid-feedback">Elige la zona.</div>

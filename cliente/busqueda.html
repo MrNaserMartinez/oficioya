@@ -11,36 +11,73 @@
 <body data-base="../">
   <div id="navbar"></div>
 
+  <!-- =====================================================
+       Búsqueda y resultados — Responsable: Integrante 2
+       Requisitos: RF04 (buscar por oficio, zona y disponibilidad),
+                   RF05 (calificación y condiciones en el resultado)
+       Incluye el FLUJO INMEDIATO DE PINCHAZOS (?oficio=OF01&ahora=1)
+       Si no hay resultados → ../estados/sin-resultados.html
+       ===================================================== -->
   <main class="container pb-5">
     <h1 class="titulo-pagina h3">Búsqueda y resultados</h1>
     <div id="mensaje"></div>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 2
-         Requisito(s): RF04, RF05
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 2</strong> · RF04, RF05</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Filtros: oficio, zona y "disponible ahora"; leer ?oficio= de la URL</li>
-        <li>Tarjetas de resultado: nombre, oficio, zonas, calificación (UI.estrellas), sello de verificación y botón "Ver perfil" → perfil-prestador.html?id=PR01</li>
-        <li>Mapa con UI.etiquetaSimulado("mapa")</li>
-        <li>Si no hay resultados → mostrar estado vacío o enlazar a ../estados/sin-resultados.html</li>
-        <li>Flujo inmediato de pinchazos: con "disponible ahora" activo, mostrar quién puede ir y botón "Pedir ahora" → solicitud.html?prestador=PR02&amp;oficio=OF01&amp;inmediata=1</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.buscarPrestadores({ oficioId, zonaId, disponibleAhora })</code></li>
-        <li><code>OY.listar("zonas")</code></li>
-        <li><code>UI.estrellas(n)</code></li>
-        <li><code>UI.etiquetaSimulado("mapa")</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Pinchazos + Sector Centro + disponible ahora → Rosa (si la hora está entre 06:00 y 20:00). Electricista + Sector Poniente → Luis.</p>
-    </section>
+    <!-- Aviso del flujo inmediato (solo con oficio de modalidad Inmediata + disponible ahora) -->
+    <section id="avisoInmediato" class="tarjeta aviso-inmediato mb-3 d-none" aria-live="polite"></section>
+
+    <div class="row g-3">
+      <!-- Filtros (en móvil van después de los resultados) -->
+      <div class="col-lg-4 order-2 order-lg-1">
+        <form class="tarjeta" id="formFiltros" method="get" action="busqueda.html" novalidate>
+          <h2 class="h6 fw-bold mb-3"><i class="bi bi-funnel" aria-hidden="true"></i> Filtros</h2>
+
+          <div class="mb-3">
+            <label for="filtroOficio" class="form-label">Oficio</label>
+            <select class="form-select" id="filtroOficio" name="oficio"></select>
+          </div>
+
+          <div class="mb-3">
+            <label for="filtroZona" class="form-label">Sector donde necesitas el servicio</label>
+            <select class="form-select" id="filtroZona" name="zona"></select>
+          </div>
+
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="filtroAhora" name="ahora" value="1">
+            <label class="form-check-label" for="filtroAhora">Disponible ahora</label>
+            <div class="form-text mt-0">Prestadores que atienden de inmediato y están en su horario en este momento.</div>
+          </div>
+
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="filtroVerificados" name="verificados" value="1">
+            <label class="form-check-label" for="filtroVerificados">Solo verificados</label>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" id="btnBuscar"><i class="bi bi-search" aria-hidden="true"></i> Buscar</button>
+            <a class="btn btn-link btn-sm" href="busqueda.html">Quitar filtros</a>
+          </div>
+        </form>
+
+        <!-- Mapa simulado -->
+        <section class="tarjeta mt-3" aria-labelledby="tituloMapa">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 id="tituloMapa" class="h6 fw-bold mb-0"><i class="bi bi-map" aria-hidden="true"></i> Cobertura por sector</h2>
+            <span id="etiquetaMapa"></span>
+          </div>
+          <div class="mapa-simulado" id="mapa" role="group" aria-label="Sectores de Jutiapa cabecera. Toca un sector para filtrar."></div>
+          <p class="small texto-suave mt-2 mb-0">Cada sector muestra cuántos prestadores de tu búsqueda lo cubren. No muestra ubicaciones reales.</p>
+        </section>
+      </div>
+
+      <!-- Resultados -->
+      <div class="col-lg-8 order-1 order-lg-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-baseline mb-2 gap-2">
+          <p class="fw-semibold mb-0" id="resumen" aria-live="polite"></p>
+          <p class="small texto-suave mb-0" id="tiempoBusqueda"></p>
+        </div>
+        <div id="resultados" class="d-grid gap-3"></div>
+      </div>
+    </div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -48,8 +85,227 @@
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
-    const u = UI.iniciarPagina();
-    // Tu código aquí.
+    const u = UI.iniciarPagina(); // pública: se puede buscar sin sesión
+
+    /* ---------- 1. Leer filtros de la URL ---------- */
+    const params = new URLSearchParams(location.search);
+    const oficiosActivos = OY.listar("oficios", o => o.activo);
+    const zonas = OY.listar("zonas");
+
+    let oficioId = params.get("oficio") || "";
+    let zonaId = params.get("zona") || "";
+    const disponibleAhora = params.get("ahora") === "1";
+    const soloVerificados = params.get("verificados") === "1";
+
+    // Validar lo que viene en la URL (alguien pudo escribirla a mano)
+    const avisos = [];
+    if (oficioId && !oficiosActivos.some(o => o.id === oficioId)) {
+      avisos.push("Ese oficio no existe o no está disponible por ahora; te mostramos todos los oficios.");
+      oficioId = "";
+    }
+    if (zonaId && !zonas.some(z => z.id === zonaId)) {
+      avisos.push("Ese sector no existe; te mostramos todos los sectores.");
+      zonaId = "";
+    }
+    if (avisos.length) UI.alerta("mensaje", "warning", avisos.join(" "));
+
+    const oficio = oficioId ? OY.obtener("oficios", oficioId) : null;
+    const esFlujoInmediato = disponibleAhora && oficio && oficio.modalidad === "Inmediata";
+
+    /* ---------- 2. Llenar el formulario con los filtros actuales ---------- */
+    const selOficio = document.getElementById("filtroOficio");
+    selOficio.innerHTML = `<option value="">Todos los oficios</option>` +
+      oficiosActivos.map(o => `<option value="${UI.escapar(o.id)}">${UI.escapar(o.nombre)} (${UI.escapar(o.modalidad)})</option>`).join("");
+    selOficio.value = oficioId;
+
+    const selZona = document.getElementById("filtroZona");
+    selZona.innerHTML = `<option value="">Todos los sectores</option>` +
+      zonas.map(z => `<option value="${UI.escapar(z.id)}">${UI.escapar(z.nombre)}</option>`).join("");
+    selZona.value = zonaId;
+
+    document.getElementById("filtroAhora").checked = disponibleAhora;
+    document.getElementById("filtroVerificados").checked = soloVerificados;
+
+    // No mandar parámetros vacíos en la URL (queda más limpia y fácil de probar)
+    document.getElementById("formFiltros").addEventListener("submit", function (e) {
+      e.preventDefault();
+      UI.bloquearBoton(document.getElementById("btnBuscar"), "Buscando…");
+      location.href = "busqueda.html" + armarQuery({
+        oficio: selOficio.value, zona: selZona.value,
+        ahora: document.getElementById("filtroAhora").checked,
+        verificados: document.getElementById("filtroVerificados").checked
+      });
+    });
+
+    function armarQuery(f) {
+      const q = new URLSearchParams();
+      if (f.oficio) q.set("oficio", f.oficio);
+      if (f.zona) q.set("zona", f.zona);
+      if (f.ahora) q.set("ahora", "1");
+      if (f.verificados) q.set("verificados", "1");
+      const s = q.toString();
+      return s ? "?" + s : "";
+    }
+
+    /* ---------- 3. Buscar (RF04) ---------- */
+    const filtros = { oficioId: oficioId || undefined, zonaId: zonaId || undefined, disponibleAhora, soloVerificados };
+    const inicio = performance.now();
+    const resultados = OY.buscarPrestadores(filtros)
+      // Orden: disponibles ahora → verificados → mejor calificados → más experiencia
+      .sort((a, b) =>
+        (b.disponibleAhora - a.disponibleAhora) ||
+        ((b.verificacion.estado === "Verificado") - (a.verificacion.estado === "Verificado")) ||
+        (b.calificacion.promedio - a.calificacion.promedio) ||
+        (b.experienciaAnios - a.experienciaAnios));
+    const milisegundos = performance.now() - inicio;
+
+    // Excepción: nadie cumple los filtros → pantalla de "sin prestadores"
+    if (resultados.length === 0) {
+      location.replace("../estados/sin-resultados.html" + armarQuery({
+        oficio: oficioId, zona: zonaId, ahora: disponibleAhora, verificados: soloVerificados
+      }));
+    } else {
+      pintarAvisoInmediato();
+      pintarResumen();
+      pintarResultados();
+    }
+    pintarMapa();
+
+    /* ---------- 4. Pintar ---------- */
+    function pintarResumen() {
+      const partes = [];
+      partes.push(oficio ? oficio.nombre : "todos los oficios");
+      partes.push(zonaId ? "en " + OY.nombreZona(zonaId) : "en todos los sectores");
+      if (disponibleAhora) partes.push("disponibles ahora");
+      if (soloVerificados) partes.push("verificados");
+      document.getElementById("resumen").textContent =
+        `${resultados.length} prestador${resultados.length === 1 ? "" : "es"}: ${partes.join(", ")}`;
+      // Evidencia para el requisito de rendimiento (RNF de búsqueda)
+      document.getElementById("tiempoBusqueda").textContent =
+        `Búsqueda en ${milisegundos.toFixed(1)} ms sobre ${OY.listar("prestadores").length} prestadores registrados`;
+    }
+
+    function pintarAvisoInmediato() {
+      if (!esFlujoInmediato) return;
+      const caja = document.getElementById("avisoInmediato");
+      caja.innerHTML = `
+        <div class="d-flex gap-3 align-items-start">
+          <i class="bi bi-lightning-charge-fill fs-3 text-warning-emphasis" aria-hidden="true"></i>
+          <div>
+            <h2 class="h6 fw-bold mb-1">Atención inmediata de ${UI.escapar(oficio.nombre.toLowerCase())}</h2>
+            <p class="small mb-1">Estos prestadores pueden atenderte en este momento. Toca <strong>Pedir ahora</strong>:
+              el prestador tiene <strong>30 minutos</strong> para responder; si no responde, la solicitud vence y puedes pedirle a otro.</p>
+            ${zonaId ? "" : `<p class="small mb-0 fw-semibold"><i class="bi bi-geo-alt" aria-hidden="true"></i> Elige tu sector en los filtros para ver solo a quien llega hasta donde estás.</p>`}
+          </div>
+        </div>`;
+      caja.classList.remove("d-none");
+    }
+
+    function selloVerificacion(p) {
+      if (p.verificacion.estado === "Verificado") {
+        const revisado = p.verificacion.revisado.join(", ");
+        return `<span class="sello sello-verificado" title="Se revisó: ${UI.escapar(revisado)}">
+                  <i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verificado</span>
+                <span class="small texto-suave">Se revisó: ${UI.escapar(revisado)}</span>`;
+      }
+      return `<span class="sello sello-pendiente"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Sin verificar</span>`;
+    }
+
+    function pintarResultados() {
+      const esCliente = u && u.rol === "cliente";
+      document.getElementById("resultados").innerHTML = resultados.map(p => {
+        const oficioMostrado = oficioId || p.oficios[0];
+        const ofi = OY.obtener("oficios", oficioMostrado);
+        const esYo = u && u.prestador && u.prestador.id === p.id;
+        const cal = p.calificacion.total
+          ? `${UI.estrellas(p.calificacion.promedio)} <span class="small">${p.calificacion.promedio} (${p.calificacion.total} calificación${p.calificacion.total === 1 ? "" : "es"})</span>`
+          : `<span class="small texto-suave">Aún sin calificaciones</span>`;
+        const d = p.disponibilidad;
+        const horario = `${d.dias.join(", ")} · ${d.horaInicio}–${d.horaFin}`;
+        const visita = (ofi && ofi.modalidad === "Diagnóstico" && p.costoVisita > 0)
+          ? `<li><i class="bi bi-cash" aria-hidden="true"></i> Visita de diagnóstico: <strong>${OY.formatoQ(p.costoVisita)}</strong> (se cotiza después)</li>` : "";
+        const urlPerfil = `perfil-prestador.html?id=${encodeURIComponent(p.id)}`;
+
+        // Botón principal: en el flujo inmediato es "Pedir ahora"
+        let accion = `<a class="btn btn-primary" href="${urlPerfil}">Ver perfil</a>`;
+        if (esFlujoInmediato && p.disponibleAhora && !esYo) {
+          const urlPedir = `solicitud.html?prestador=${encodeURIComponent(p.id)}&oficio=${encodeURIComponent(oficioId)}&inmediata=1` +
+            (zonaId ? `&zona=${encodeURIComponent(zonaId)}` : "");
+          accion = `<a class="btn btn-acento" href="${urlPedir}" data-pedir="${UI.escapar(p.id)}">
+                      <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Pedir ahora</a>
+                    <a class="btn btn-outline-primary" href="${urlPerfil}">Ver perfil</a>`;
+        }
+
+        return `
+          <article class="tarjeta resultado-prestador ${esFlujoInmediato && p.disponibleAhora ? "destacado" : ""}" aria-label="${UI.escapar(p.nombre)}">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+              <div>
+                <p class="nombre mb-1">${UI.escapar(p.nombre)} ${esYo ? '<span class="badge text-bg-secondary">Eres tú</span>' : ""}</p>
+                <p class="small texto-suave mb-1">
+                  ${p.oficios.map(o => UI.escapar(OY.nombreOficio(o))).join(", ")} · ${p.experienciaAnios} año${p.experienciaAnios === 1 ? "" : "s"} de experiencia
+                </p>
+                <div class="mb-2">${cal}</div>
+              </div>
+              <div class="text-md-end">
+                ${p.disponibleAhora ? `<span class="sello sello-ahora"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Disponible ahora</span>` : ""}
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">${selloVerificacion(p)}</div>
+            ${p.descripcion ? `<p class="mb-2">${UI.escapar(p.descripcion)}</p>` : ""}
+            <ul class="list-unstyled small mb-3">
+              <li><i class="bi bi-geo-alt" aria-hidden="true"></i> Atiende: ${p.zonas.map(z => UI.escapar(OY.nombreZona(z))).join(", ")}</li>
+              <li><i class="bi bi-calendar-week" aria-hidden="true"></i> Horario: ${UI.escapar(horario)}${d.atiendeInmediato ? " · atiende de inmediato" : ""}</li>
+              ${p.especialidades.length ? `<li><i class="bi bi-tag" aria-hidden="true"></i> ${p.especialidades.map(e => UI.escapar(OY.nombreEspecialidad(e))).join(", ")}</li>` : ""}
+              ${visita}
+            </ul>
+            <div class="d-flex flex-wrap gap-2">${accion}</div>
+          </article>`;
+      }).join("");
+
+      // "Pedir ahora" sin sesión de cliente: avisar antes de mandar al login
+      document.querySelectorAll("[data-pedir]").forEach(a => a.addEventListener("click", function (e) {
+        if (esCliente) return; // sigue el enlace a solicitud.html
+        e.preventDefault();
+        const texto = u
+          ? "Para pedir un servicio debes entrar con una cuenta de cliente. Cambia de rol desde tu menú (arriba a la derecha) o ingresa con otra cuenta."
+          : "Para pedir el servicio primero ingresa con tu cuenta de cliente. Después vuelve a tocar Pinchazo ahora.";
+        UI.alerta("mensaje", "info", texto);
+        if (!u) {
+          document.getElementById("mensaje").insertAdjacentHTML("beforeend",
+            `<a class="btn btn-sm btn-primary mb-3" href="../acceso/login.html">Ingresar</a>`);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }));
+    }
+
+    /* Mapa SIMULADO: cuadrícula de sectores con cuántos prestadores cubren cada uno */
+    function pintarMapa() {
+      document.getElementById("etiquetaMapa").innerHTML = UI.etiquetaSimulado("mapa");
+      const posicion = { Z02: 2, Z05: 4, Z01: 5, Z04: 6, Z03: 8 }; // 3x3: N arriba, P izq., C centro, O der., S abajo
+      const sinZona = OY.buscarPrestadores(Object.assign({}, filtros, { zonaId: undefined }));
+      const celdas = [];
+      for (let i = 1; i <= 9; i++) {
+        const z = zonas.find(x => posicion[x.id] === i);
+        if (!z) { celdas.push(`<span class="sector-libre" aria-hidden="true"></span>`); continue; }
+        const n = sinZona.filter(p => p.zonas.includes(z.id)).length;
+        const activo = z.id === zonaId;
+        celdas.push(`<button type="button" class="sector ${activo ? "activo" : ""} ${n === 0 ? "sin-prestadores" : ""}"
+            data-zona="${UI.escapar(z.id)}" aria-pressed="${activo}"
+            aria-label="${UI.escapar(z.nombre)}: ${n} prestador${n === 1 ? "" : "es"}">
+            <span>${UI.escapar(z.nombre.replace("Sector ", ""))}</span><span class="conteo">${n}</span></button>`);
+      }
+      const mapa = document.getElementById("mapa");
+      mapa.innerHTML = celdas.join("");
+      mapa.querySelectorAll("[data-zona]").forEach(b => b.addEventListener("click", () => {
+        const nueva = b.dataset.zona === zonaId ? "" : b.dataset.zona; // tocar el mismo sector lo quita
+        location.href = "busqueda.html" + armarQuery({ oficio: oficioId, zona: nueva, ahora: disponibleAhora, verificados: soloVerificados });
+      }));
+      // Sectores que no están en la cuadrícula (si admin agrega más) se listan aparte
+      const extra = zonas.filter(z => !posicion[z.id]);
+      if (extra.length) {
+        mapa.insertAdjacentHTML("afterend", `<p class="small mt-2 mb-0">Otros sectores: ${extra.map(z => UI.escapar(z.nombre)).join(", ")}</p>`);
+      }
+    }
   </script>
 </body>
 </html>

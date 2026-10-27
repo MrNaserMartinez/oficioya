@@ -62,13 +62,13 @@ En la versión real, `estado.js` sería el backend del monolito (ej. Node/Expres
 | `prestador/cotizacion.html` | Preparar cotización (RF08) | Integrante 4 |
 | `cliente/cotizacion.html` | Aprobar o rechazar cotización (RF08) | Integrante 4 |
 | `cliente/seguimiento.html` | Seguimiento, chat y cancelación (RF09–RF11) | Integrante 4 |
-| `prestador/bandeja.html` | Bandeja del prestador (RF07, RF09) | Integrante 5 |
-| `cliente/historial.html` | Historial (RF13) | Integrante 5 |
-| `cliente/calificar.html` | Calificar (RF12) | Integrante 5 |
-| `cliente/reclamo.html` | Reclamo (RF11) | Integrante 5 |
-| `estados/error.html`, `estados/sin-conexion.html` | Excepciones | Integrante 5 |
+| `prestador/bandeja.html` | Bandeja del prestador (RF07, RF09) | Integrante 5 ✅ |
+| `cliente/historial.html` | Historial (RF13) | Integrante 5 ✅ |
+| `cliente/calificar.html` | Calificar (RF12) | Integrante 5 ✅ |
+| `cliente/reclamo.html` | Reclamo (RF11) | Integrante 5 ✅ |
+| `estados/error.html`, `estados/sin-conexion.html` | Excepciones | Integrante 5 ✅ |
 
-**Cada página ya existe** con la navbar, los permisos y una tarjeta "En construcción" que dice qué debe hacer, qué funciones usar y con qué datos probar. Cuando construyan la pantalla, borren esa tarjeta.
+**Cada página existe** con la navbar y los permisos. Las que todavía no estén terminadas muestran una tarjeta "En construcción" que dice qué debe hacer, qué funciones usar y con qué datos probar; al terminar la pantalla, se borra esa tarjeta.
 
 ---
 
@@ -161,3 +161,16 @@ UI.alerta("mensaje", "success", "Solicitud cancelada.");
 | Notificaciones | Simuladas |
 | Fotos y evidencia | Simuladas: solo se guarda el nombre del archivo |
 | Seguridad de contraseñas | No se cifran (es un prototipo); en producción se usaría hash |
+
+---
+
+## Documentación de la entrega
+
+Los documentos de pruebas, despliegue y defensa del Integrante 5 están en `docs/`:
+
+- `docs/05-pruebas-despliegue.md`: plan de pruebas, usabilidad, defectos, despliegue, operación, mantenimiento, retiro, indicadores, conclusiones, fuentes y declaración de IA.
+- `docs/05-casos-de-prueba.md`: 29 casos PRU con precondiciones, pasos y resultado esperado.
+- `docs/05-registro-defectos.csv`: plantilla para registrar defectos con severidad y evidencia.
+- `docs/05-guion-defensa-y-diapositivas.md`: estructura del Word, guion de defensa y esquema de diapositivas.
+
+> Los resultados de usabilidad y las pruebas formales se completan con evidencia real; no se inventan datos.
