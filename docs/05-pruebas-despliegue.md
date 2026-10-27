@@ -327,7 +327,7 @@ Estas no son fallas ocultas: son decisiones del alcance y deben explicarse en la
 | DEF-02 | 26/10/2026 | `cliente/perfil-prestador.html`, `cliente/busqueda.html` / PRU-22 | Plural incorrecto «calificaciónes» en lugar de «calificaciones» cuando el prestador tiene dos o más calificaciones. | Baja | Baja | Abierto | Integrante 2 (búsqueda y perfil) | `evidencias/PRU-22_perfil.png` |
 | DEF-03 | 26/10/2026 | Bandeja / PRU-12, PRU-13, PRU-20 | Los botones Confirmar de los modales quedaban deshabilitados después del primer uso; no se podía rechazar o cancelar una segunda solicitud sin recargar. | Alta | Alta | Cerrado | Mario | Humo 23/23 y ejecución formal |
 
-El registro completo está en `docs/05-registro-defectos.csv`. Los defectos que aparezcan en la sesión formal y en la usabilidad se agregan allí con su evidencia; no se copian aquí hasta estar verificados.
+El registro completo está en `docs/05-registro-defectos.csv`. Esta tabla resume los defectos de la ejecución formal. Los hallazgos de usabilidad se agregarán cuando exista la sesión real con participantes.
 
 ### 3.3 Mejoras propuestas
 

@@ -169,8 +169,9 @@ UI.alerta("mensaje", "success", "Solicitud cancelada.");
 Los documentos de pruebas, despliegue y defensa del Integrante 5 están en `docs/`:
 
 - `docs/05-pruebas-despliegue.md`: plan de pruebas, usabilidad, defectos, despliegue, operación, mantenimiento, retiro, indicadores, conclusiones, fuentes y declaración de IA.
-- `docs/05-casos-de-prueba.md`: 29 casos PRU con precondiciones, pasos y resultado esperado.
-- `docs/05-registro-defectos.csv`: plantilla para registrar defectos con severidad y evidencia.
+- `docs/05-casos-de-prueba.md`: ejecución real de los 37 casos PRU del plan, con resultado y evidencia.
+- `docs/05-registro-defectos.csv`: registro de defectos con severidad, responsable y evidencia.
 - `docs/05-guion-defensa-y-diapositivas.md`: estructura del Word, guion de defensa y esquema de diapositivas.
+- `evidencias/`: capturas de los 37 casos ejecutados el 26/10/2026 (índice en `evidencias/README.md`).
 
-> Los resultados de usabilidad y las pruebas formales se completan con evidencia real; no se inventan datos.
+> Los 37 casos funcionales ya se ejecutaron en navegador real (36 aprobados y 1 fallido). La prueba de usabilidad con cinco personas sigue pendiente y se completará solo con participantes reales; no se inventan datos.
