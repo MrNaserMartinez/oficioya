@@ -12,45 +12,311 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Seguimiento del servicio</h1>
-    <div id="mensaje"></div>
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb small mt-3 mb-0" id="ruta"></ol>
+    </nav>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 4
-         Requisito(s): RF09, RF10, RF11
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 4</strong> · RF09, RF10, RF11</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?solicitud=; mostrar estado actual con UI.badgeEstado</li>
-        <li>Línea de tiempo con OY.historialDe(id): fecha, quién y motivo</li>
-        <li>Botones SOLO de las acciones permitidas: OY.accionesPermitidas(id) (ej. prestador: "En ejecución", "Finalizada"; cliente: "Cancelada")</li>
-        <li>Cancelar pidiendo motivo → OY.cambiarEstado(id, "Cancelada", motivo)</li>
-        <li>Chat de la solicitud (RF10): OY.mensajesDe(id) y OY.enviarMensaje(id, texto)</li>
-        <li>Enlaces a cotización, calificar y reclamo según el estado</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.historialDe(id)</code></li>
-        <li><code>OY.accionesPermitidas(id)</code></li>
-        <li><code>OY.cambiarEstado(id, nuevoEstado, motivo)</code></li>
-        <li><code>OY.mensajesDe / OY.enviarMensaje</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">SOL-0004 (cliente2@demo.com) tiene historial y mensajes.</p>
-    </section>
+    <h1 class="titulo-pagina h3">Seguimiento del servicio</h1>
+    <div id="mensaje" aria-live="polite"></div>
+    <div id="contenido"></div>
   </main>
+
+  <!-- Cancelar o rechazar: el motivo es obligatorio y queda en el historial (RN07) -->
+  <div class="modal fade" id="modalMotivo" tabindex="-1" aria-labelledby="tituloMotivo" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formMotivo" novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="tituloMotivo">Indica el motivo</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small" id="textoMotivo"></p>
+          <label class="form-label" for="motivo">Motivo</label>
+          <textarea class="form-control" id="motivo" rows="3" maxlength="250" required aria-describedby="errorMotivo"></textarea>
+          <div class="invalid-feedback" id="errorMotivo">El motivo es obligatorio.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+          <button type="submit" class="btn btn-danger" id="btnConfirmarMotivo">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="../js/datos.js"></script>
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
-    const u = UI.iniciarPagina({ roles: ["cliente","prestador"] });
-    // Tu código aquí.
+    /* Integrante 4 · RF09, RF10, RF11 · CU11, CU12, CU13 · RN04, RN07 · SEC-04, SEC-05
+       La usan el cliente y el prestador de la solicitud. Muestra el estado,
+       la línea de tiempo (OY.historialDe), SOLO las acciones permitidas
+       (OY.accionesPermitidas), la cancelación con motivo y el chat. */
+    const u = UI.iniciarPagina({ roles: ["cliente", "prestador"] });
+    const esc = UI.escapar;
+    const id = new URLSearchParams(window.location.search).get("solicitud");
+    const CAMINO = ["Solicitada", "En evaluación", "Pendiente de aprobación", "Confirmada", "En ejecución", "Finalizada"];
+    const ICONO = { "Solicitada": "bi-send", "En evaluación": "bi-search", "Pendiente de aprobación": "bi-hourglass-split",
+                    "Confirmada": "bi-check2-circle", "En ejecución": "bi-tools", "Finalizada": "bi-check-all" };
+    const esCliente = u && u.rol === "cliente";
+    let modal, accionPendiente = null;
+
+    if (u) {
+      document.getElementById("ruta").innerHTML = esCliente
+        ? '<li class="breadcrumb-item"><a href="historial.html">Mis solicitudes</a></li><li class="breadcrumb-item active" aria-current="page">Seguimiento</li>'
+        : '<li class="breadcrumb-item"><a href="../prestador/bandeja.html">Mi bandeja</a></li><li class="breadcrumb-item active" aria-current="page">Seguimiento</li>';
+      modal = new bootstrap.Modal(document.getElementById("modalMotivo"));
+      conectarModal();
+      pintar();
+    }
+
+    function solicitudPermitida() {
+      const s = id ? OY.obtener("solicitudes", id) : null;
+      if (!s) return null;
+      if (esCliente && s.clienteId !== u.cuenta.id) return null;
+      if (!esCliente && (!u.prestador || s.prestadorId !== u.prestador.id)) return null;
+      return s;
+    }
+
+    function pintar() {
+      const s = solicitudPermitida();
+      const cont = document.getElementById("contenido");
+      if (!s) {
+        cont.innerHTML = `<div class="tarjeta estado-vacio">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          <h2 class="h5 fw-bold">Solicitud no encontrada</h2>
+          <p class="small mb-3">Solo puedes ver el seguimiento de tus propias solicitudes.</p>
+          <a class="btn btn-primary btn-sm" href="${esCliente ? "historial.html" : "../prestador/bandeja.html"}">Volver</a></div>`;
+        return;
+      }
+      const historial = OY.historialDe(s.id);
+      cont.innerHTML = `
+        ${encabezado(s)}
+        <div class="row g-3">
+          <div class="col-lg-7">
+            ${pasos(s, historial)}
+            ${acciones(s)}
+            ${chat(s)}
+          </div>
+          <div class="col-lg-5">${lineaTiempo(historial)}</div>
+        </div>`;
+      conectarAcciones(s);
+      conectarChat(s);
+      const caja = document.getElementById("cajaChat");
+      if (caja) caja.scrollTop = caja.scrollHeight;
+    }
+
+    /* ---------- Encabezado ---------- */
+    function encabezado(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const h = s.horario || {};
+      const horario = h.tipo === "Inmediata" ? "Inmediata" : `${esc(h.fecha || "—")} · ${esc(h.franja || "—")}`;
+      const otro = esCliente
+        ? `<i class="bi bi-person-badge" aria-hidden="true"></i> Prestador: ${esc(OY.nombrePrestador(s.prestadorId))}`
+        : `<i class="bi bi-person" aria-hidden="true"></i> Cliente: ${esc(OY.nombreCompleto(s.clienteId))}`;
+      const confirmada = ["Confirmada", "En ejecución", "Finalizada"].includes(s.estado);
+      const direccion = !esCliente && !confirmada
+        ? `<span class="texto-suave">Referencia: ${esc(s.direccionReferencia || "—")}. La dirección exacta se comparte al confirmar (RNF01).</span>`
+        : `Referencia: ${esc(s.direccionReferencia || "—")} ${UI.etiquetaSimulado("mapa")}`;
+      return `
+        <section class="tarjeta mb-3" aria-label="Datos de la solicitud">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h5 fw-bold mb-1">
+                <i class="bi ${esc(oficio ? oficio.icono : "bi-tools")}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))} <span class="texto-suave fw-normal fs-6">· ${esc(s.id)}</span>
+              </h2>
+              <p class="small texto-suave mb-0">${otro}
+                <span class="mx-1" aria-hidden="true">·</span><i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}
+                <span class="mx-1" aria-hidden="true">·</span><i class="bi bi-calendar-event" aria-hidden="true"></i> ${horario}
+                <span class="mx-1" aria-hidden="true">·</span>${esc(s.modalidad)}</p>
+            </div>
+            <div class="text-end">
+              <span class="small texto-suave d-block">Estado actual</span>
+              ${UI.badgeEstado(s.estado)}
+            </div>
+          </div>
+          <p class="mt-2 mb-1 text-break">${esc(s.descripcion)}</p>
+          <p class="small mb-0"><i class="bi bi-pin-map" aria-hidden="true"></i> ${direccion}</p>
+        </section>`;
+    }
+
+    /* ---------- Pasos del servicio ---------- */
+    function pasos(s, historial) {
+      const final = ["Rechazada", "Vencida", "Cancelada"].includes(s.estado);
+      let alcanzado = CAMINO.indexOf(s.estado);
+      if (final) {
+        const previo = historial.filter(h => h.estadoNuevo === s.estado).pop();
+        alcanzado = previo ? CAMINO.indexOf(previo.estadoAnterior) : 0;
+      }
+      const items = CAMINO.map((e, i) => {
+        const clase = (s.estado === "Finalizada" || i < alcanzado || (final && i === alcanzado)) ? "hecho" : (!final && i === alcanzado ? "actual" : "");
+        const icono = clase === "hecho" ? "bi-check-lg" : ICONO[e];
+        const lector = clase === "hecho" ? "(completado)" : clase === "actual" ? "(estado actual)" : "(pendiente)";
+        return `<li class="${clase}" ${clase === "actual" ? 'aria-current="step"' : ""}>
+          <i class="bi ${icono}" aria-hidden="true"></i>${esc(e)} <span class="visually-hidden">${lector}</span></li>`;
+      }).join("");
+      let aviso = "";
+      if (final) {
+        const h = historial.filter(x => x.estadoNuevo === s.estado).pop();
+        const quien = h && h.cuentaId ? OY.nombreCompleto(h.cuentaId) : "El sistema";
+        aviso = `<div class="alert alert-warning small mt-3 mb-0" role="status">
+          <strong>La solicitud terminó como ${esc(s.estado)}.</strong> ${esc(quien)}${h && h.motivo ? `: «${esc(h.motivo)}»` : "."}</div>`;
+      }
+      return `
+        <section class="tarjeta mb-3" aria-labelledby="tituloPasos">
+          <h2 class="h6 fw-bold mb-3" id="tituloPasos">Avance</h2>
+          <ol class="pasos-servicio">${items}</ol>
+          ${aviso}
+        </section>`;
+    }
+
+    /* ---------- Acciones permitidas ---------- */
+    function acciones(s) {
+      const permitidas = OY.accionesPermitidas(s.id);
+      const enc = encodeURIComponent(s.id);
+      const botones = [];
+      const notas = [];
+
+      if (esCliente) {
+        if (permitidas.includes("Confirmada"))
+          botones.push(`<a class="btn btn-acento btn-sm" href="cotizacion.html?solicitud=${enc}"><i class="bi bi-file-earmark-check" aria-hidden="true"></i> Revisar y aprobar cotización</a>`);
+        else if (OY.cotizacionDeSolicitud(s.id))
+          botones.push(`<a class="btn btn-outline-primary btn-sm" href="cotizacion.html?solicitud=${enc}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ver cotización</a>`);
+        if (OY.puedeCalificar(s.id))
+          botones.push(`<a class="btn btn-acento btn-sm" href="calificar.html?solicitud=${enc}"><i class="bi bi-star" aria-hidden="true"></i> Calificar servicio</a>`);
+      } else {
+        if (permitidas.includes("En evaluación"))
+          botones.push(`<button type="button" class="btn btn-acento btn-sm" data-estado="En evaluación"><i class="bi bi-check2" aria-hidden="true"></i> Aceptar solicitud</button>`);
+        if (permitidas.includes("Pendiente de aprobación"))
+          botones.push(`<a class="btn btn-acento btn-sm" href="../prestador/cotizacion.html?solicitud=${enc}"><i class="bi bi-calculator" aria-hidden="true"></i> Preparar cotización</a>`);
+        else if (OY.cotizacionDeSolicitud(s.id))
+          botones.push(`<a class="btn btn-outline-primary btn-sm" href="../prestador/cotizacion.html?solicitud=${enc}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ver cotización</a>`);
+        if (permitidas.includes("En ejecución"))
+          botones.push(`<button type="button" class="btn btn-acento btn-sm" data-estado="En ejecución"><i class="bi bi-play-circle" aria-hidden="true"></i> Iniciar trabajo</button>`);
+        if (permitidas.includes("Finalizada"))
+          botones.push(`<button type="button" class="btn btn-acento btn-sm" data-estado="Finalizada"><i class="bi bi-check-all" aria-hidden="true"></i> Marcar como finalizado</button>`);
+        if (permitidas.includes("Rechazada"))
+          botones.push(`<button type="button" class="btn btn-outline-danger btn-sm" data-estado="Rechazada" data-motivo="1"><i class="bi bi-x-circle" aria-hidden="true"></i> Rechazar</button>`);
+      }
+      if (permitidas.includes("Cancelada"))
+        botones.push(`<button type="button" class="btn btn-outline-danger btn-sm" data-estado="Cancelada" data-motivo="1"><i class="bi bi-slash-circle" aria-hidden="true"></i> Cancelar solicitud</button>`);
+
+      const huboServicio = OY.historialDe(s.id).some(h => h.estadoNuevo === "En evaluación");
+      if (s.estado !== "Solicitada" && huboServicio)
+        botones.push(`<a class="btn btn-outline-secondary btn-sm" href="reclamo.html?solicitud=${enc}"><i class="bi bi-flag" aria-hidden="true"></i> Presentar reclamo</a>`);
+
+      if (s.estado === "En ejecución" && esCliente)
+        notas.push("El trabajo ya empezó: no se puede cancelar. Si hay un problema, presenta un reclamo (RN07).");
+      if (s.estado === "Pendiente de aprobación" && !esCliente)
+        notas.push("Esperando la respuesta del cliente a tu cotización.");
+      if (s.estado === "Solicitada" && esCliente)
+        notas.push(`Esperando que el prestador acepte. Vence el ${OY.formatoFecha(s.fechaLimite)} si no responde.`);
+
+      if (!botones.length && !notas.length) return "";
+      const hayCambios = botones.some(x => x.includes("data-estado"));
+      return `
+        <section class="tarjeta mb-3" aria-labelledby="tituloAcciones">
+          <h2 class="h6 fw-bold" id="tituloAcciones">¿Qué puedes hacer ahora?</h2>
+          ${notas.map(n => `<p class="small texto-suave mb-2"><i class="bi bi-info-circle" aria-hidden="true"></i> ${esc(n)}</p>`).join("")}
+          <div class="d-flex flex-wrap gap-2">${botones.join("")}</div>
+          ${hayCambios ? `<p class="small texto-suave mt-2 mb-0">Cada cambio avisa a la otra parte ${UI.etiquetaSimulado("notificación")}</p>` : ""}
+        </section>`;
+    }
+
+    function cambiar(s, estado, motivo, boton) {
+      if (boton) UI.bloquearBoton(boton, "Guardando…");
+      const r = OY.cambiarEstado(s.id, estado, motivo);
+      if (!r.ok) { if (boton) UI.liberarBoton(boton); UI.alerta("mensaje", "danger", r.error); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+      UI.alerta("mensaje", "success", `La solicitud pasó a «${estado}».`);
+      pintar();
+    }
+
+    function conectarAcciones(s) {
+      document.querySelectorAll("[data-estado]").forEach(b => b.addEventListener("click", () => {
+        const estado = b.dataset.estado;
+        if (b.dataset.motivo) {
+          accionPendiente = { s, estado };
+          document.getElementById("tituloMotivo").textContent = estado === "Cancelada" ? "Cancelar la solicitud" : "Rechazar la solicitud";
+          document.getElementById("textoMotivo").textContent = estado === "Cancelada"
+            ? "La otra parte verá el motivo. Esta acción no se puede deshacer."
+            : "El cliente verá el motivo y podrá buscar otro prestador.";
+          document.getElementById("btnConfirmarMotivo").textContent = estado === "Cancelada" ? "Cancelar solicitud" : "Rechazar solicitud";
+          document.getElementById("motivo").value = "";
+          document.getElementById("motivo").classList.remove("is-invalid");
+          modal.show();
+          return;
+        }
+        cambiar(s, estado, "", b);
+      }));
+    }
+
+    function conectarModal() {
+      const campo = document.getElementById("motivo");
+      document.getElementById("modalMotivo").addEventListener("shown.bs.modal", () => campo.focus());
+      campo.addEventListener("input", () => campo.classList.remove("is-invalid"));
+      document.getElementById("formMotivo").addEventListener("submit", ev => {
+        ev.preventDefault();
+        if (!campo.value.trim()) { campo.classList.add("is-invalid"); campo.focus(); return; }
+        modal.hide();
+        if (accionPendiente) cambiar(accionPendiente.s, accionPendiente.estado, campo.value.trim());
+        accionPendiente = null;
+      });
+    }
+
+    /* ---------- Línea de tiempo ---------- */
+    function lineaTiempo(historial) {
+      const items = historial.slice().reverse().map(h => {
+        const quien = h.cuentaId ? OY.nombreCompleto(h.cuentaId) : "Sistema";
+        const rol = UI.ETIQUETA_ROL[h.rol] || (h.rol === "sistema" ? "automático" : h.rol);
+        return `<li>
+          <div class="d-flex flex-wrap gap-2 align-items-center">${UI.badgeEstado(h.estadoNuevo)}</div>
+          <p class="small mb-0 mt-1"><strong>${esc(quien)}</strong> <span class="texto-suave">(${esc(rol)}) · ${esc(OY.formatoFecha(h.fecha))}</span></p>
+          ${h.motivo ? `<p class="small mb-0 text-break">Motivo: ${esc(h.motivo)}</p>` : ""}
+        </li>`;
+      }).join("");
+      return `
+        <section class="tarjeta columna-fija" aria-labelledby="tituloHistorial">
+          <h2 class="h6 fw-bold mb-3" id="tituloHistorial">Historial de cambios</h2>
+          <ol class="linea-tiempo" reversed>${items}</ol>
+        </section>`;
+    }
+
+    /* ---------- Chat (RF10) ---------- */
+    function chat(s) {
+      const msgs = OY.mensajesDe(s.id).map(m => {
+        const mio = m.cuentaId === u.cuenta.id;
+        return `<div class="mensaje-chat ${mio ? "mio" : ""}">
+          <div class="meta">${mio ? "Tú" : esc(OY.nombreCompleto(m.cuentaId))} · ${esc(OY.formatoFecha(m.fecha))}</div>
+          <div class="text-break">${esc(m.texto)}</div></div>`;
+      }).join("");
+      return `
+        <section class="tarjeta" aria-labelledby="tituloChat">
+          <h2 class="h6 fw-bold" id="tituloChat">Mensajes con ${esc(esCliente ? OY.nombrePrestador(s.prestadorId) : OY.nombreCompleto(s.clienteId))}</h2>
+          <div class="chat" id="cajaChat" role="log" aria-live="polite" aria-label="Mensajes de la solicitud">
+            ${msgs || '<p class="small texto-suave m-2">Aún no hay mensajes. Escribe para aclarar detalles del trabajo.</p>'}
+          </div>
+          <form id="formChat" class="d-flex gap-2 mt-2" novalidate>
+            <label class="visually-hidden" for="textoChat">Escribe un mensaje</label>
+            <input class="form-control" id="textoChat" maxlength="500" placeholder="Escribe un mensaje…" autocomplete="off">
+            <button class="btn btn-primary" type="submit" aria-label="Enviar mensaje"><i class="bi bi-send" aria-hidden="true"></i></button>
+          </form>
+        </section>`;
+    }
+
+    function conectarChat(s) {
+      const form = document.getElementById("formChat");
+      form.addEventListener("submit", ev => {
+        ev.preventDefault();
+        const campo = document.getElementById("textoChat");
+        if (!campo.value.trim()) { campo.focus(); return; }
+        const r = OY.enviarMensaje(s.id, campo.value);
+        if (!r.ok) { UI.alerta("mensaje", "danger", r.error); return; }
+        document.getElementById("mensaje").innerHTML = "";
+        pintar();
+        document.getElementById("textoChat").focus();
+      });
+    }
   </script>
 </body>
 </html>

@@ -12,34 +12,16 @@
   <div id="navbar"></div>
 
   <main class="container pb-5">
-    <h1 class="titulo-pagina h3">Preparar cotización</h1>
-    <div id="mensaje"></div>
+    <nav aria-label="Ruta de navegación">
+      <ol class="breadcrumb small mt-3 mb-0">
+        <li class="breadcrumb-item"><a href="bandeja.html">Mi bandeja</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Preparar cotización</li>
+      </ol>
+    </nav>
 
-    <!-- =====================================================
-         PANTALLA EN CONSTRUCCIÓN — Responsable: Integrante 4
-         Requisito(s): RF08
-         Borren la tarjeta de abajo cuando construyan la pantalla.
-         ===================================================== -->
-    <section class="tarjeta en-construccion">
-      <p class="mb-2"><span class="badge text-bg-warning"><i class="bi bi-cone-striped" aria-hidden="true"></i> En construcción</span>
-        <strong>Responsable: Integrante 4</strong> · RF08</p>
-      <h2 class="h6 fw-bold mt-3">Qué debe hacer esta pantalla</h2>
-      <ul>
-        <li>Leer ?solicitud= de la URL; mostrar resumen de la solicitud</li>
-        <li>Tabla editable de rubros: tipo (Mano de obra / Material / Cargo), descripción, cantidad, precio unitario; agregar y quitar filas</li>
-        <li>Costo de visita, precio Estimado o Definitivo, vigencia en horas</li>
-        <li>Subtotales por tipo y total en vivo (OY.totalesCotizacion)</li>
-        <li>Enviar → la solicitud pasa sola a "Pendiente de aprobación"</li>
-      </ul>
-      <h2 class="h6 fw-bold">Funciones a usar (js/estado.js y js/componentes.js)</h2>
-      <ul class="small">
-        <li><code>OY.guardarCotizacion(solicitudId, { detalles, costoVisita, tipoPrecio, vigenciaHoras })</code></li>
-        <li><code>OY.totalesCotizacion(cot)</code></li>
-        <li><code>OY.formatoQ(monto)</code></li>
-      </ul>
-      <h2 class="h6 fw-bold">Para probar</h2>
-      <p class="small mb-0">Como electricista@demo.com (rol prestador): primero acepta una solicitud en la bandeja para que esté "En evaluación".</p>
-    </section>
+    <h1 class="titulo-pagina h3">Preparar cotización</h1>
+    <div id="mensaje" aria-live="polite"></div>
+    <div id="contenido"></div>
   </main>
 
   <script src="../vendor/bootstrap/bootstrap.bundle.min.js"></script>
@@ -47,8 +29,319 @@
   <script src="../js/estado.js"></script>
   <script src="../js/componentes.js"></script>
   <script>
+    /* Integrante 4 · RF08 · CU08 · RN05, RN06 · SEC-03
+       El prestador arma la cotización con rubros separados (Mano de obra,
+       Material, Cargo) más el costo de visita. Al enviarla, la solicitud
+       pasa sola a "Pendiente de aprobación" (OY.guardarCotizacion). */
     const u = UI.iniciarPagina({ roles: ["prestador"] });
-    // Tu código aquí.
+    const esc = UI.escapar;
+    const TIPOS = {
+      "Mano de obra": { icono: "bi-person-gear", ayuda: "Ej.: Instalación de 3 tomacorrientes" },
+      "Material":     { icono: "bi-box-seam",    ayuda: "Ej.: Tomacorriente doble" },
+      "Cargo":        { icono: "bi-receipt",     ayuda: "Ej.: Traslado" }
+    };
+    const id = new URLSearchParams(window.location.search).get("solicitud");
+    const CLAVE_BORRADOR = "oficioya_borrador_cot_" + id;
+    let rubros = [];
+    let contador = 0;
+
+    if (u) iniciar();
+
+    function iniciar() {
+      const s = id ? OY.obtener("solicitudes", id) : null;
+      if (!s || !u.prestador || s.prestadorId !== u.prestador.id) {
+        return mostrarAviso("bi-exclamation-triangle", "Solicitud no encontrada",
+          "No encontramos esa solicitud entre las que te llegaron. Ábrela desde tu bandeja.");
+      }
+      if (s.estado !== "En evaluación") return mostrarNoEditable(s);
+
+      document.getElementById("contenido").innerHTML = formulario(s);
+      rubros = leerBorrador() || rubrosIniciales(s);
+      pintarRubros();
+      conectarEventos(s);
+      recalcular();
+    }
+
+    /* ---------- Cuando no se puede cotizar ---------- */
+    function mostrarAviso(icono, titulo, texto, botones) {
+      document.getElementById("contenido").innerHTML = `
+        <div class="tarjeta estado-vacio">
+          <i class="bi ${icono}" aria-hidden="true"></i>
+          <h2 class="h5 fw-bold">${esc(titulo)}</h2>
+          <p class="small mb-3">${texto}</p>
+          <div class="d-flex flex-wrap justify-content-center gap-2">
+            ${botones || '<a class="btn btn-primary btn-sm" href="bandeja.html">Ir a mi bandeja</a>'}
+          </div>
+        </div>`;
+    }
+
+    function mostrarNoEditable(s) {
+      const cot = OY.cotizacionDeSolicitud(s.id);
+      const seguir = `<a class="btn btn-outline-primary btn-sm" href="../cliente/seguimiento.html?solicitud=${encodeURIComponent(s.id)}">Ver seguimiento</a>`;
+      if (s.estado === "Solicitada") {
+        return mostrarAviso("bi-inbox", "Primero acepta la solicitud",
+          `Solo se cotiza una solicitud <strong>En evaluación</strong>. Esta está ${UI.badgeEstado(s.estado)}: acéptala en tu bandeja y vuelve aquí.`,
+          '<a class="btn btn-primary btn-sm" href="bandeja.html">Ir a mi bandeja</a>' + seguir);
+      }
+      if (!cot) {
+        return mostrarAviso("bi-info-circle", "Esta solicitud ya no admite cotización",
+          `La solicitud está ${UI.badgeEstado(s.estado)}.`, '<a class="btn btn-primary btn-sm" href="bandeja.html">Ir a mi bandeja</a>' + seguir);
+      }
+      const t = OY.totalesCotizacion(cot);
+      document.getElementById("contenido").innerHTML = `
+        ${tarjetaSolicitud(s)}
+        <section class="tarjeta" aria-labelledby="tituloEnviada">
+          <div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+            <div>
+              <h2 class="h5 fw-bold mb-1" id="tituloEnviada">Cotización ${esc(cot.id)}</h2>
+              <p class="small texto-suave mb-0">Enviada el ${esc(OY.formatoFecha(cot.fecha))} · Precio ${esc(cot.tipoPrecio.toLowerCase())} · Vigencia ${cot.vigenciaHoras} h</p>
+            </div>
+            <span class="tipo-rubro"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> ${esc(cot.estado)}</span>
+          </div>
+          <p class="small mt-2 mb-3">Ya no se puede modificar: el cliente la ${cot.estado === "Enviada" ? "está revisando" : "ya respondió o venció"}. Si aparece trabajo adicional durante la ejecución, se pide como una solicitud nueva (RN06).</p>
+          ${tablaDetalle(cot)}
+          <div class="resumen-totales mt-3">${filasTotales(t)}</div>
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <a class="btn btn-primary btn-sm" href="bandeja.html">Ir a mi bandeja</a>${seguir}
+          </div>
+        </section>`;
+    }
+
+    function tablaDetalle(cot) {
+      return `<div class="table-responsive"><table class="table table-sm align-middle mb-0">
+        <caption class="visually-hidden">Rubros de la cotización</caption>
+        <thead><tr><th scope="col">Tipo</th><th scope="col">Descripción</th><th scope="col" class="text-end">Cant.</th><th scope="col" class="text-end">Precio</th><th scope="col" class="text-end">Subtotal</th></tr></thead>
+        <tbody>${cot.detalles.map(d => `<tr><td>${esc(d.tipo)}</td><td>${esc(d.descripcion)}</td>
+          <td class="text-end">${d.cantidad}</td><td class="text-end">${OY.formatoQ(d.precioUnitario)}</td>
+          <td class="text-end">${OY.formatoQ(d.cantidad * d.precioUnitario)}</td></tr>`).join("")}</tbody></table></div>`;
+    }
+
+    /* ---------- Formulario ---------- */
+    function tarjetaSolicitud(s) {
+      const oficio = OY.obtener("oficios", s.oficioId);
+      const h = s.horario || {};
+      const horario = h.tipo === "Inmediata" ? "Inmediata (ahora)" : `${esc(h.fecha || "—")} · ${esc(h.franja || "—")}`;
+      return `
+        <section class="tarjeta mb-3" aria-label="Solicitud a cotizar">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h2 class="h5 fw-bold mb-1">
+                <i class="bi ${esc(oficio ? oficio.icono : "bi-tools")}" aria-hidden="true"></i>
+                ${esc(OY.nombreOficio(s.oficioId))} <span class="texto-suave fw-normal fs-6">· ${esc(s.id)}</span>
+              </h2>
+              <p class="small texto-suave mb-0">
+                <i class="bi bi-person" aria-hidden="true"></i> ${esc(OY.nombreCompleto(s.clienteId))}
+                <span class="mx-1" aria-hidden="true">·</span><i class="bi bi-geo-alt" aria-hidden="true"></i> ${esc(OY.nombreZona(s.zonaId))}
+                <span class="mx-1" aria-hidden="true">·</span><i class="bi bi-calendar-event" aria-hidden="true"></i> ${horario}
+              </p>
+            </div>
+            <div>${UI.badgeEstado(s.estado)}</div>
+          </div>
+          <p class="mt-2 mb-0 text-break">${esc(s.descripcion)}</p>
+        </section>`;
+    }
+
+    function avisoModalidad(s) {
+      const textos = {
+        "Inmediata": "Usa una tarifa fija y una vigencia corta, para que el cliente decida rápido.",
+        "Diagnóstico": "Incluye el costo de visita que muestra tu perfil. Si el cliente rechaza la cotización después de la visita, solo se cobra la visita (RN05).",
+        "Por presupuesto": "Separa los materiales de la mano de obra e incluye lo que viste al tomar medidas. Lo adicional durante la ejecución se pide como solicitud nueva (RN06).",
+        "Programada": "Confirma el precio para la fecha y franja que eligió el cliente."
+      };
+      return `<p class="aviso-modalidad small mb-3"><strong>${esc(s.modalidad)}.</strong> ${esc(textos[s.modalidad] || "")}</p>`;
+    }
+
+    function formulario(s) {
+      const visita = Number(u.prestador.costoVisita) || 0;
+      const vigencia = s.modalidad === "Inmediata" ? 1 : 48;
+      const opcionesVigencia = [1, 24, 48, 72].map(h =>
+        `<option value="${h}" ${h === vigencia ? "selected" : ""}>${h === 1 ? "1 hora" : h + " horas"}</option>`).join("");
+      return `
+        ${tarjetaSolicitud(s)}
+        <form id="formCotizacion" novalidate>
+          <div class="row g-3">
+            <div class="col-lg-8">
+              <section class="tarjeta" aria-labelledby="tituloRubros">
+                <h2 class="h5 fw-bold" id="tituloRubros">Rubros</h2>
+                ${avisoModalidad(s)}
+                <div id="listaRubros"></div>
+                <p id="sinRubros" class="small texto-suave d-none mt-2">Agrega al menos un rubro.</p>
+                <div class="d-flex flex-wrap gap-2 mt-3" role="group" aria-label="Agregar rubro">
+                  ${Object.keys(TIPOS).map(t => `<button type="button" class="btn btn-outline-primary btn-sm" data-agregar="${t}">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> ${t === "Material" ? "Material" : t}</button>`).join("")}
+                </div>
+              </section>
+
+              <section class="tarjeta mt-3" aria-labelledby="tituloCondiciones">
+                <h2 class="h5 fw-bold" id="tituloCondiciones">Condiciones</h2>
+                <div class="row g-3">
+                  <div class="col-sm-4">
+                    <label class="form-label" for="costoVisita">Costo de visita (Q)</label>
+                    <input class="form-control" id="costoVisita" type="number" min="0" step="0.01" inputmode="decimal" value="${visita}" aria-describedby="ayudaVisita">
+                    <div id="ayudaVisita" class="form-text">${s.modalidad === "Diagnóstico" ? "El que muestra tu perfil." : "Déjalo en 0 si no cobras visita."}</div>
+                  </div>
+                  <div class="col-sm-4">
+                    <span class="form-label d-block" id="etqTipoPrecio">Tipo de precio</span>
+                    <div role="radiogroup" aria-labelledby="etqTipoPrecio">
+                      <div class="form-check"><input class="form-check-input" type="radio" name="tipoPrecio" id="precioEstimado" value="Estimado" ${s.modalidad === "Inmediata" ? "" : "checked"}>
+                        <label class="form-check-label" for="precioEstimado">Estimado</label></div>
+                      <div class="form-check"><input class="form-check-input" type="radio" name="tipoPrecio" id="precioDefinitivo" value="Definitivo" ${s.modalidad === "Inmediata" ? "checked" : ""}>
+                        <label class="form-check-label" for="precioDefinitivo">Definitivo</label></div>
+                    </div>
+                  </div>
+                  <div class="col-sm-4">
+                    <label class="form-label" for="vigencia">Vigencia</label>
+                    <select class="form-select" id="vigencia" aria-describedby="ayudaVigencia">${opcionesVigencia}</select>
+                    <div id="ayudaVigencia" class="form-text">Si el cliente no responde, vence (RN05).</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="col-lg-4">
+              <section class="tarjeta columna-fija" aria-labelledby="tituloTotales">
+                <h2 class="h5 fw-bold" id="tituloTotales">Total para el cliente</h2>
+                <div class="resumen-totales" id="totales" aria-live="polite"></div>
+                <p class="small texto-suave mt-2 mb-3">Al enviarla, la solicitud pasa a ${UI.badgeEstado("Pendiente de aprobación")} y el cliente recibe un aviso ${UI.etiquetaSimulado("notificación")}.</p>
+                <button class="btn btn-acento w-100" type="submit" id="btnEnviar"><i class="bi bi-send" aria-hidden="true"></i> Enviar cotización</button>
+                <a class="btn btn-link w-100 mt-1" href="bandeja.html">Volver sin enviar</a>
+              </section>
+            </div>
+          </div>
+        </form>`;
+    }
+
+    function rubrosIniciales(s) {
+      const base = { "Inmediata": ["Mano de obra"], "Diagnóstico": ["Mano de obra", "Material"], "Por presupuesto": ["Mano de obra", "Material"] };
+      return (base[s.modalidad] || ["Mano de obra"]).map(t => nuevoRubro(t));
+    }
+    function nuevoRubro(tipo) { return { clave: ++contador, tipo, descripcion: "", cantidad: 1, precioUnitario: "" }; }
+
+    function pintarRubros() {
+      const lista = document.getElementById("listaRubros");
+      lista.innerHTML = rubros.map((r, i) => `
+        <div class="rubro" data-clave="${r.clave}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="tipo-rubro"><i class="bi ${TIPOS[r.tipo].icono}" aria-hidden="true"></i> ${esc(r.tipo)}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-quitar="${r.clave}" aria-label="Quitar rubro ${i + 1} (${esc(r.tipo)})">
+              <i class="bi bi-trash" aria-hidden="true"></i><span class="d-none d-sm-inline"> Quitar</span></button>
+          </div>
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6">
+              <label class="form-label small mb-1" for="desc${r.clave}">Descripción</label>
+              <input class="form-control form-control-sm" id="desc${r.clave}" data-campo="descripcion" maxlength="150" placeholder="${esc(TIPOS[r.tipo].ayuda)}" value="${esc(r.descripcion)}">
+            </div>
+            <div class="col-4 col-md-2">
+              <label class="form-label small mb-1" for="cant${r.clave}">Cantidad</label>
+              <input class="form-control form-control-sm" id="cant${r.clave}" data-campo="cantidad" type="number" min="0.01" step="any" inputmode="decimal" value="${esc(r.cantidad)}">
+            </div>
+            <div class="col-4 col-md-2">
+              <label class="form-label small mb-1" for="prec${r.clave}">Precio (Q)</label>
+              <input class="form-control form-control-sm" id="prec${r.clave}" data-campo="precioUnitario" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(r.precioUnitario)}">
+            </div>
+            <div class="col-4 col-md-2 text-end">
+              <span class="small texto-suave d-block">Subtotal</span>
+              <span class="subtotal-rubro" id="sub${r.clave}">${OY.formatoQ(subtotal(r))}</span>
+            </div>
+          </div>
+        </div>`).join("");
+      document.getElementById("sinRubros").classList.toggle("d-none", rubros.length > 0);
+    }
+
+    function subtotal(r) { return (Number(r.cantidad) || 0) * (Number(r.precioUnitario) || 0); }
+
+    function cotizacionActual() {
+      return {
+        detalles: rubros.map(r => ({ tipo: r.tipo, descripcion: String(r.descripcion).trim(), cantidad: r.cantidad, precioUnitario: r.precioUnitario })),
+        costoVisita: document.getElementById("costoVisita").value,
+        tipoPrecio: document.querySelector('input[name="tipoPrecio"]:checked').value,
+        vigenciaHoras: document.getElementById("vigencia").value
+      };
+    }
+
+    function filasTotales(t) {
+      return `
+        <div class="fila-total"><span>Mano de obra</span><span>${OY.formatoQ(t.manoObra)}</span></div>
+        <div class="fila-total"><span>Materiales</span><span>${OY.formatoQ(t.materiales)}</span></div>
+        <div class="fila-total"><span>Cargos</span><span>${OY.formatoQ(t.cargos)}</span></div>
+        <div class="fila-total"><span>Visita</span><span>${OY.formatoQ(t.visita)}</span></div>
+        <div class="fila-total gran-total"><span>Total</span><span>${OY.formatoQ(t.total)}</span></div>`;
+    }
+
+    function recalcular() {
+      const cot = cotizacionActual();
+      cot.detalles = cot.detalles.map(d => Object.assign({}, d, { cantidad: Number(d.cantidad) || 0, precioUnitario: Number(d.precioUnitario) || 0 }));
+      document.getElementById("totales").innerHTML = filasTotales(OY.totalesCotizacion(cot));
+      rubros.forEach(r => { const el = document.getElementById("sub" + r.clave); if (el) el.textContent = OY.formatoQ(subtotal(r)); });
+      guardarBorrador();
+    }
+
+    /* Borrador local: si se va la conexión o se recarga, no se pierde lo escrito (RNF05). */
+    function guardarBorrador() { try { sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify(rubros)); } catch (e) {} }
+    function leerBorrador() {
+      try {
+        const r = JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR) || "null");
+        if (!Array.isArray(r) || !r.length) return null;
+        r.forEach(x => { x.clave = ++contador; });
+        return r.filter(x => TIPOS[x.tipo]);
+      } catch (e) { return null; }
+    }
+    function borrarBorrador() { try { sessionStorage.removeItem(CLAVE_BORRADOR); } catch (e) {} }
+
+    function validar() {
+      if (!rubros.length) return "Agrega al menos un rubro.";
+      for (const r of rubros) {
+        const n = rubros.indexOf(r) + 1;
+        if (!String(r.descripcion).trim()) return `Escribe la descripción del rubro ${n} (${r.tipo}).`;
+        if (!(Number(r.cantidad) > 0)) return `La cantidad del rubro ${n} debe ser mayor que 0.`;
+        if (r.precioUnitario === "" || !(Number(r.precioUnitario) >= 0)) return `Escribe el precio del rubro ${n}.`;
+      }
+      if (!(Number(document.getElementById("costoVisita").value) >= 0)) return "El costo de visita no puede ser negativo.";
+      return null;
+    }
+
+    function conectarEventos(s) {
+      const lista = document.getElementById("listaRubros");
+      lista.addEventListener("input", ev => {
+        const caja = ev.target.closest(".rubro");
+        if (!caja || !ev.target.dataset.campo) return;
+        const r = rubros.find(x => x.clave === Number(caja.dataset.clave));
+        r[ev.target.dataset.campo] = ev.target.value;
+        recalcular();
+      });
+      lista.addEventListener("click", ev => {
+        const b = ev.target.closest("[data-quitar]");
+        if (!b) return;
+        rubros = rubros.filter(x => x.clave !== Number(b.dataset.quitar));
+        pintarRubros(); recalcular();
+        const primero = document.querySelector("[data-agregar]"); if (primero) primero.focus();
+      });
+      document.querySelectorAll("[data-agregar]").forEach(b => b.addEventListener("click", () => {
+        rubros.push(nuevoRubro(b.dataset.agregar));
+        pintarRubros(); recalcular();
+        document.getElementById("desc" + rubros[rubros.length - 1].clave).focus();
+      }));
+      ["costoVisita", "vigencia"].forEach(i => document.getElementById(i).addEventListener("input", recalcular));
+      document.querySelectorAll('input[name="tipoPrecio"]').forEach(x => x.addEventListener("change", recalcular));
+
+      document.getElementById("formCotizacion").addEventListener("submit", ev => {
+        ev.preventDefault();
+        const error = validar();
+        if (error) { UI.alerta("mensaje", "danger", error); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+        const boton = document.getElementById("btnEnviar");
+        UI.bloquearBoton(boton, "Enviando…");
+        const r = OY.guardarCotizacion(s.id, cotizacionActual());
+        if (!r.ok) { UI.liberarBoton(boton); UI.alerta("mensaje", "danger", r.error); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+        borrarBorrador();
+        const t = OY.totalesCotizacion(r.dato);
+        document.getElementById("mensaje").innerHTML = "";
+        mostrarAviso("bi-check-circle", "Cotización enviada",
+          `La cotización <strong>${esc(r.dato.id)}</strong> por <strong>${OY.formatoQ(t.total)}</strong> quedó enviada. La solicitud está ${UI.badgeEstado("Pendiente de aprobación")} y el cliente tiene ${r.dato.vigenciaHoras} h para responder.`,
+          `<a class="btn btn-primary btn-sm" href="bandeja.html">Ir a mi bandeja</a>
+           <a class="btn btn-outline-primary btn-sm" href="../cliente/seguimiento.html?solicitud=${encodeURIComponent(s.id)}">Ver seguimiento</a>`);
+        window.scrollTo({ top: 0 });
+      });
+    }
   </script>
 </body>
 </html>
