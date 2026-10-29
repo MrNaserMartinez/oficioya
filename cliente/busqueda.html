@@ -220,10 +220,14 @@
         const cal = p.calificacion.total
           ? `${UI.estrellas(p.calificacion.promedio)} <span class="small">${p.calificacion.promedio} (${p.calificacion.total} calificación${p.calificacion.total === 1 ? "" : "es"})</span>`
           : `<span class="small texto-suave">Aún sin calificaciones</span>`;
+        // Entrevista P3: los prestadores quieren que se vea su experiencia, no solo estrellas
+        const finalizados = OY.listar("solicitudes", s => s.prestadorId === p.id && s.estado === "Finalizada").length;
+        const trabajos = `<span class="small ms-2"><i class="bi bi-check-all" aria-hidden="true"></i> ${finalizados} servicio${finalizados === 1 ? "" : "s"} finalizado${finalizados === 1 ? "" : "s"} en OficioYa</span>`;
         const d = p.disponibilidad;
         const horario = `${d.dias.join(", ")} · ${d.horaInicio}–${d.horaFin}`;
-        const visita = (ofi && ofi.modalidad === "Diagnóstico" && p.costoVisita > 0)
-          ? `<li><i class="bi bi-cash" aria-hidden="true"></i> Visita de diagnóstico: <strong>${OY.formatoQ(p.costoVisita)}</strong> (se cotiza después)</li>` : "";
+        // Entrevistas: el cobro de visita es condicional, así que se informa siempre en modalidad diagnóstico (también si es Q0)
+        const visita = (ofi && ofi.modalidad === "Diagnóstico")
+          ? `<li><i class="bi bi-cash" aria-hidden="true"></i> Visita de diagnóstico: <strong>${p.costoVisita > 0 ? OY.formatoQ(p.costoVisita) : "sin costo"}</strong> (se cotiza después)</li>` : "";
         const urlPerfil = `perfil-prestador.html?id=${encodeURIComponent(p.id)}`;
 
         // Botón principal: en el flujo inmediato es "Pedir ahora"
@@ -244,7 +248,7 @@
                 <p class="small texto-suave mb-1">
                   ${p.oficios.map(o => UI.escapar(OY.nombreOficio(o))).join(", ")} · ${p.experienciaAnios} año${p.experienciaAnios === 1 ? "" : "s"} de experiencia
                 </p>
-                <div class="mb-2">${cal}</div>
+                <div class="mb-2">${cal}${trabajos}</div>
               </div>
               <div class="text-md-end">
                 ${p.disponibleAhora ? `<span class="sello sello-ahora"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Disponible ahora</span>` : ""}
@@ -262,18 +266,12 @@
           </article>`;
       }).join("");
 
-      // "Pedir ahora" sin sesión de cliente: avisar antes de mandar al login
+      // "Pedir ahora": sin sesión sigue el enlace y solicitud.html lo manda al login,
+      // que lo regresa a la misma solicitud (?volver=). Con sesión de otro rol, se avisa.
       document.querySelectorAll("[data-pedir]").forEach(a => a.addEventListener("click", function (e) {
-        if (esCliente) return; // sigue el enlace a solicitud.html
+        if (esCliente || !u) return;
         e.preventDefault();
-        const texto = u
-          ? "Para pedir un servicio debes entrar con una cuenta de cliente. Cambia de rol desde tu menú (arriba a la derecha) o ingresa con otra cuenta."
-          : "Para pedir el servicio primero ingresa con tu cuenta de cliente. Después vuelve a tocar Pinchazo ahora.";
-        UI.alerta("mensaje", "info", texto);
-        if (!u) {
-          document.getElementById("mensaje").insertAdjacentHTML("beforeend",
-            `<a class="btn btn-sm btn-primary mb-3" href="../acceso/login.html">Ingresar</a>`);
-        }
+        UI.alerta("mensaje", "info", "Para pedir un servicio debes entrar con una cuenta de cliente. Cambia de rol desde tu menú (arriba a la derecha) o ingresa con otra cuenta.");
         window.scrollTo({ top: 0, behavior: "smooth" });
       }));
     }
